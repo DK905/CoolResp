@@ -3,26 +3,27 @@
 import pyexcel  # Модуль для обработки EXCEL таблиц
 import re       # Модуль регулярных выражений
 import datetime # Модуль обработки дат
+import openpyxl # Модуль для сохранения EXCEL таблицы в .xlsx (с форматированием)
 
 """ Считывание файла в книжный словарь """
 # Тесты с несколькими группами и листами
-temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/1_KURS_2018-2019_2semestr.xls')     # 1  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/2_kurs_2semestr_2018-2019.xls')     # 2  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/3_kurs_2018-2019_II_semestr.xls')   # 3  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/3_kurs_2019-2020_II_semestr.xls')   # 4  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/4_kurs_2018-2019_II_semestr.xls')   # 5  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-91_92b_2_semestr_2019-2020.xls') # 6  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/1_KURS_2018-2019_2semestr.xls')     # 1 Интересный тест
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/2_kurs_2semestr_2018-2019.xls')     # 2  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/3_kurs_2018-2019_II_semestr.xls')   # 3  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/3_kurs_2019-2020_II_semestr.xls')   # 4  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/4_kurs_2018-2019_II_semestr.xls')   # 5  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-91_92b_2_semestr_2019-2020.xls') # 6  
 
 # Тесты где всего один лист и всего одна группа
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/921_2_semestr_2019-2020.xls')       # 7  Интересный тест 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/MITE-91_2019-2020_II_semestr.xls')  # 8  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/MIVT-91_2019-2020_II_semestr.xls')  # 9  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-51b_2018-2019_II_semestr.xlsx')  # 10 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-61b_2018-2019_II_semestr.xlsx')  # 11 Интересный тест 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-71b_2019-2020_II_semestr.xlsx')  # 12 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-71_2_semestr_2018-2019.xls')     # 13 Белкина
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-81_2_semestr_2018-2019.xls')     # 14 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CoolResp/Тесты/PE-81_2_semestr_2019-2020.xls')     # 15 Интересный тест
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/921_2_semestr_2019-2020.xls')       # 7  Интересный тест 
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/MITE-91_2019-2020_II_semestr.xls')  # 8  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/MIVT-91_2019-2020_II_semestr.xls')  # 9  
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-51b_2018-2019_II_semestr.xlsx')  # 10 
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-61b_2018-2019_II_semestr.xlsx')  # 11 Интересный тест 
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-71b_2019-2020_II_semestr.xlsx')  # 12 
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-71_2_semestr_2018-2019.xls')     # 13 Белкина
+#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-81_2_semestr_2018-2019.xls')     # 14 
+temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-81_2_semestr_2019-2020.xls')     # 15 Интересный тест
 
 """ Выбор листа с книги """
 if len(temp_table) > 1:
@@ -67,10 +68,8 @@ if '' in temp_sheet[0]:
 """ Обособление периода расписания и групп """
 # Период выделяется из "с <дата1> по <дата2>" в кортеж (дата1, дата2)
 timey_wimey = re.findall(r'(с\s*[\d.]{5,8}[г.]*\s*по\s*[\d.]{5,8}[г.]*)', temp_sheet[0][0])[0]
-#print(timey_wimey)
 period = re.findall(r'с\s*([\d.]{5,8})[г.]*\s*по\s*([\d.]{5,8})[г.]*', temp_sheet[0][0])[0]
 year = str(2000+int(period[0][-2:]))
-#print(f'Расписание на {year}-й год действительно с "{period[0]}" по "{period[1]}"')
 
 # Строка групп сохраняется как список групп на листе
 #title = [temp_sheet[1][i] for i in range(2, len(temp_sheet[1]), 2)]
@@ -279,20 +278,13 @@ default_para = 'общ'    # Обозначение для общей пары
 default_type = 'Рейд'   # Обозначение для предмета без типа пары
 default_date = timey_wimey # Дата по умолчанию = период
 day_num = set()
-#default_prep = 'Тот-Чьё-Имя-Нельзя-Называть'  # Препод по умолчанию
-default_prep = 'Препод 404'  # Препод по умолчанию
+default_prep = 'Тот-Чьё-Имя-Нельзя-Называть'  # Препод по умолчанию
+#default_prep = 'Препод 404'  # Препод по умолчанию
 for record in table:
-    day_num.add(record[0])
-    if not record[2]: # Если инфы о предмете нет - пропуск
+    day_num.add(record[0]) # Множество пройденных дней (для определения текущего)
+    if not record[2]: # Если инфы в ячейке предмета нет, то запись не обрабатывается
         continue
-    #"""
-    print('='*188)
-    print(record[0], record[1])
-    print(repr(record[2]))
-    print('-'*188)
-    #"""
-    #print('-'*188)
-    #print(record[0], record[1])
+
     # Список логических предметов в ячейке (элемент = всё что относится к предмету)
     divide = list(a for a in re.findall(pattern1, record[2], flags = re.M))
     # Цикл для обработки строки логического предмета:
@@ -325,7 +317,7 @@ for record in table:
             razbor.append(divide[ind])
         # День недели - номер пары - предмет - препод - тип пары - подгруппа - даты
         for nabor in razbor:
-            print(nabor)
+            #print(nabor)
             # Вырезать предмет из набора в отдельную переменную (если предмет указан)
             if re.search(pat1, nabor, flags = re.M):
                 predmet = re.search(pat1, nabor, flags = re.M)[1]
@@ -417,8 +409,19 @@ for record in table:
                               info[1][0], # Тип пары
                               info[2][0], # Подгруппа
                               info[0]     # Даты
-                              #', '.join(info[0])     # Даты
+                              #', '.join(info[0])     # Даты (для записи в ячейку экселевской таблицы)
                               ])
-                print(parse[-1])
 
-#pyexcel.save_as(array=parse, dest_sheet_name=str(title[v]), dest_file_name='Расписание_'+str(title[v])+'.xlsx')
+# Тестовый вывод для сверки. Дат нет т.к много места занимают. Кабинетов нет т.к пока не добавлены
+parse_title = 'Расписание на '+year+'-й год. Учебная часть семестра идёт с '+period[0]+' по '+period[1]
+print(f"\n{parse_title : ^188}\n")
+print('='*187)
+print(f"| {'День' : ^15} | {'№' : ^3} | {'Предмет' : ^65} | {'Препод' : ^55} | {'Тип' : ^15} | {'Для кого' : ^15} |")
+print('-'*187)
+for i, record in enumerate(parse):
+    if i>0 and record[0]!=parse[i-1][0]:
+        print('-'*187)
+    print(f"| {record[0] : ^15} | {record[1] : ^3} | {record[2] : ^65} | {record[3] : ^55} | {record[4] : ^15} | {record[5] : ^15} |")
+print('='*187)
+
+# Сохранение и форматирование нужно будет делать через openpyxl: pyexcel не поддерживает работу со стилями и объединением ячеек :с
