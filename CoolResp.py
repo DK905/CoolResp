@@ -7,23 +7,23 @@ import openpyxl # Модуль для сохранения EXCEL таблицы 
 
 """ Считывание файла в книжный словарь """
 # Тесты с несколькими группами и листами
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/1_KURS_2018-2019_2semestr.xls')     # 1 Интересный тест
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/2_kurs_2semestr_2018-2019.xls')     # 2  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/3_kurs_2018-2019_II_semestr.xls')   # 3  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/3_kurs_2019-2020_II_semestr.xls')   # 4  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/4_kurs_2018-2019_II_semestr.xls')   # 5  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-91_92b_2_semestr_2019-2020.xls') # 6  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/1_KURS_2018-2019_2semestr.xls')     # 1 Интересный тест
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/2_kurs_2semestr_2018-2019.xls')     # 2  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/3_kurs_2018-2019_II_semestr.xls')   # 3  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/3_kurs_2019-2020_II_semestr.xls')   # 4  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/4_kurs_2018-2019_II_semestr.xls')   # 5  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-91_92b_2_semestr_2019-2020.xls') # 6  
 
 # Тесты где всего один лист и всего одна группа
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/921_2_semestr_2019-2020.xls')       # 7  Интересный тест 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/MITE-91_2019-2020_II_semestr.xls')  # 8  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/MIVT-91_2019-2020_II_semestr.xls')  # 9  
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-51b_2018-2019_II_semestr.xlsx')  # 10 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-61b_2018-2019_II_semestr.xlsx')  # 11 Интересный тест 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-71b_2019-2020_II_semestr.xlsx')  # 12 
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-71_2_semestr_2018-2019.xls')     # 13 Белкина
-#temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-81_2_semestr_2018-2019.xls')     # 14 
-temp_table = pyexcel.get_book_dict(file_name='F:/CResp_Tests/Тесты/PE-81_2_semestr_2019-2020.xls')     # 15 Интересный тест
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/921_2_semestr_2019-2020.xls')       # 7  Интересный тест 
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/MITE-91_2019-2020_II_semestr.xls')  # 8  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/MIVT-91_2019-2020_II_semestr.xls')  # 9  
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-51b_2018-2019_II_semestr.xlsx')  # 10 
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-61b_2018-2019_II_semestr.xlsx')  # 11 Интересный тест 
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-71b_2019-2020_II_semestr.xlsx')  # 12 
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-71_2_semestr_2018-2019.xls')     # 13 Белкина
+#temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-81_2_semestr_2018-2019.xls')     # 14 
+temp_table = pyexcel.get_book_dict(file_name='Тесты/PE-81_2_semestr_2019-2020.xls')     # 15 Интересный тест
 
 """ Выбор листа с книги """
 if len(temp_table) > 1:
@@ -94,11 +94,16 @@ def merged_cells(row, col, cabs):
 
 """ Процедура отсеивания ошибок в ячейках (начальная стадия разбора) """
 def errors_clear(sheet, i, row):
+    # Сокращённые записи дней (зачем усложнять?)
+    days_names = {0: 'ПН', 1: 'ВТ', 2: 'СР', 3: 'ЧТ', 4: 'ПТ', 5: 'СБ'}
+    days_pat = r'(.*[лЛ].*)|(.*[вВ].*[оО].*[кК].*)|(.*[сС].*[дД].*)|(.*[чЧ].*[гГ].*)|(.*[яЯ].*)|(.*[уУ].*[бБ].*)'   
     if not row[0]: # Т.к день - общая ячейка
         row[0] = sheet[i-1][0]
     else: # Если день есть, привести к общему виду
-        row[0] = re.sub('\s+', '', row[0])
-        row[0] = row[0][0].upper() + row[0][1:]
+        for i, sovp in enumerate(re.findall(days_pat, row[0])[0]):
+            if sovp:
+                row[0] = days_names[i]
+                break
     if not row[1]: # Один номер пары порой включает несколько строк
         row[1] = sheet[i-1][1]
     # Чистка кабинетов и удаление непонятной инфы
@@ -203,7 +208,7 @@ def format_prep(prepod):
 # Форматирование типа пары
 def format_tip(tip):
     tip_list = {0: 'Диф.Зачёт', 1: 'Зачёт', 2: 'Лекция', 3: 'Лекция',  4: 'Лаба', 5: 'Практика'}
-    repair_pat = r'(.*?6.*D.*)|(.*?7.*Z.*)|(.*?т.*р.*я.*)|(.*?л.*к.*я.*)|(.*?л.*б.*р.*)|(.*?п.*а.*к.*)'
+    repair_pat = r'(.*?6.*D.*)|(.*?7.*Z.*)|(.*?т.*р.*я.*)|(.*?л.*к.*я.*)|(.*?л.*б.*)|(.*?п.*а.*к.*)'
     for i, sovp in enumerate(re.findall(repair_pat, tip)[0]):
         if sovp:
             return tip_list[i]
@@ -278,13 +283,13 @@ default_para = 'общ'    # Обозначение для общей пары
 default_type = 'Рейд'   # Обозначение для предмета без типа пары
 default_date = timey_wimey # Дата по умолчанию = период
 day_num = set()
-default_prep = 'Тот-Чьё-Имя-Нельзя-Называть'  # Препод по умолчанию
-#default_prep = 'Препод 404'  # Препод по умолчанию
+#default_prep = 'Тот-Чьё-Имя-Нельзя-Называть'  # Препод по умолчанию
+#default_prep = 'Препод 404'
+default_prep = 'NOBODY'
 for record in table:
     day_num.add(record[0]) # Множество пройденных дней (для определения текущего)
     if not record[2]: # Если инфы в ячейке предмета нет, то запись не обрабатывается
         continue
-
     # Список логических предметов в ячейке (элемент = всё что относится к предмету)
     divide = list(a for a in re.findall(pattern1, record[2], flags = re.M))
     # Цикл для обработки строки логического предмета:
@@ -413,15 +418,23 @@ for record in table:
                               ])
 
 # Тестовый вывод для сверки. Дат нет т.к много места занимают. Кабинетов нет т.к пока не добавлены
-parse_title = 'Расписание на '+year+'-й год. Учебная часть семестра идёт с '+period[0]+' по '+period[1]
+parse_title = 'Расписание '+str(title[v])+' на '+year+'-й год. Учебная часть семестра идёт с '+period[0]+' по '+period[1]
 print(f"\n{parse_title : ^188}\n")
 print('='*187)
-print(f"| {'День' : ^15} | {'№' : ^3} | {'Предмет' : ^65} | {'Препод' : ^55} | {'Тип' : ^15} | {'Для кого' : ^15} |")
+print(f"| {'День' : ^6} | {'№' : ^3} | {'Предмет' : ^65} | {'Препод' : ^55} | {'Тип' : ^15} | {'Для кого' : ^15} | {'Каб' : ^6} |")
 print('-'*187)
 for i, record in enumerate(parse):
     if i>0 and record[0]!=parse[i-1][0]:
         print('-'*187)
-    print(f"| {record[0] : ^15} | {record[1] : ^3} | {record[2] : ^65} | {record[3] : ^55} | {record[4] : ^15} | {record[5] : ^15} |")
+    print(f"| {record[0] : ^6} | {record[1] : ^3} | {record[2] : ^65} | {record[3] : ^55} | {record[4] : ^15} | {record[5] : ^15} | {' ' : ^6} |")
 print('='*187)
 
 # Сохранение и форматирование нужно будет делать через openpyxl: pyexcel не поддерживает работу со стилями и объединением ячеек :с
+# Расписание звонков в будние дни. 5-минутные перерывы не учитываются, т.к преподы их не делают
+time_budni = {1: '08:30 - 10:05', 2: '10:15 - 11:50', 3: '12:35 - 14:10',
+              4: '14:20 - 15:55', 5: '16:05 - 17:40', 6: '17:50 - 19:25'}
+
+# Расписание звонков в субботу. 5-минутные перерывы не учитываются, т.к преподы их не делают
+time_vihod = {1: '08:30 - 10:05', 2: '10:15 - 11:50', 3: '12:00 - 13:40',
+              4: '13:50 - 15:25', 5: '15:35 - 17:10', 6: '17:20 - 18:55'}
+
