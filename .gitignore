@@ -1,8 +1,8 @@
 __pycache__
-.pyc
-.bat
-.spec
-.pptx
-.txt
-.ui
+*.pyc
+*.bat
+*.spec
+*.pptx
+*.txt
+*.ui
 RETEST.py
