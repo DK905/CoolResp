@@ -52,11 +52,12 @@ class AboutBox(QDialog):
                                '7)  Выбор подгруппы для пар с делением на две подгруппы;',
                                '8)  Выбор подгруппы для пар с делением на три подгруппы;',
                                '9)  Чекбокс для сокращения должности преподавателей;',
-                               '10) Чекбокс для сокращения учебных корпусов у кабинетов;',
-                               '11) Чекбокс для сокращения подгрупп до одного лишь номера;',
-                               '12) Кнопка для конвертации расписания;',
-                               '13) Виджет, куда выводятся логи;',
-                               '14) Переключатель отображения логов\n(при нажатии, виджет логов сворачивается).'])
+                               '10) Чекбокс для сокращения предметов;',
+                               '11) Чекбокс для сокращения учебных корпусов у кабинетов;',
+                               '12) Чекбокс для сокращения подгрупп до одного лишь номера;',
+                               '13) Кнопка для конвертации расписания;',
+                               '14) Виджет, куда выводятся логи;',
+                               '15) Переключатель отображения логов\n(при нажатии, виджет логов сворачивается).'])
 
 
 class Ui_MainWindow(object):
@@ -185,14 +186,18 @@ class Ui_MainWindow(object):
         self.checkBox_1 = QCheckBox(self.groupBox_8)
         self.checkBox_1.setObjectName("checkBox_1")
         self.horizontalLayout.addWidget(self.checkBox_1)
-        # Переключатель "сокращать корпуса кабинетов?"
+        # Переключатель "сокращать названия предметов?"
         self.checkBox_2 = QCheckBox(self.groupBox_8)
         self.checkBox_2.setObjectName("checkBox_2")
         self.horizontalLayout.addWidget(self.checkBox_2)
-        # Переключатель "сокращать п/гр в подгруппах?"
+        # Переключатель "сокращать корпуса кабинетов?"
         self.checkBox_3 = QCheckBox(self.groupBox_8)
         self.checkBox_3.setObjectName("checkBox_3")
         self.horizontalLayout.addWidget(self.checkBox_3)
+        # Переключатель "сокращать п/гр в подгруппах?"
+        self.checkBox_4 = QCheckBox(self.groupBox_8)
+        self.checkBox_4.setObjectName("checkBox_4")
+        self.horizontalLayout.addWidget(self.checkBox_4)
 
         """ Блок конвертации """
         self.pushButton_3 = QPushButton(self.cw_main)
@@ -298,12 +303,15 @@ universus114@mail.ru
         # Переключатель "сокращать должности преподов?"
         self.checkBox_1.setText(_translate("MainWindow", 'Преподаватели'))
         self.checkBox_1.setToolTip('Сокращать должность преподов?')
+        # Переключатель "сокращать названия предметов?"
+        self.checkBox_2.setText(_translate("MainWindow", 'Предметы'))
+        self.checkBox_2.setToolTip('Сокращать названия предметов?')
         # Переключатель "сокращать корпуса кабинетов?"
-        self.checkBox_2.setText(_translate("MainWindow", 'Кабинеты'))
-        self.checkBox_2.setToolTip('Сокращать корпуса кабинетов?')
+        self.checkBox_3.setText(_translate("MainWindow", 'Кабинеты'))
+        self.checkBox_3.setToolTip('Сокращать корпуса кабинетов?')
         # Переключатель "сокращать п/гр в подгруппах?"
-        self.checkBox_3.setText(_translate("MainWindow", 'Подгруппы'))
-        self.checkBox_3.setToolTip('Сокращать подгруппы до номеров?')
+        self.checkBox_4.setText(_translate("MainWindow", 'Подгруппы'))
+        self.checkBox_4.setToolTip('Сокращать подгруппы до номеров?')
 
         """ Блок конвертации """
         self.pushButton_3.setText(_translate("MainWindow", 'Конвертировать'))

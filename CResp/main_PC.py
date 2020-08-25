@@ -156,20 +156,21 @@ class my_window(QMainWindow):
             grp2  = self.ui.comboBox_3.currentIndex()     # Комбобокс выбора подгруппы "из 2-х"
             grp3  = self.ui.comboBox_4.currentIndex()     # Комбобокс выбора подгруппы "из 3-х"
             f1    = bool(self.ui.checkBox_1.checkState()) # Чекбокс сокращения препода
-            f2    = bool(self.ui.checkBox_2.checkState()) # Чекбокс сокращения кабинета
-            f3    = bool(self.ui.checkBox_3.checkState()) # Чекбокс сокращения подгруппы
+            f2    = bool(self.ui.checkBox_2.checkState()) # Чекбокс сокращения предмета
+            f3    = bool(self.ui.checkBox_3.checkState()) # Чекбокс сокращения кабинета
+            f4    = bool(self.ui.checkBox_4.checkState()) # Чекбокс сокращения подгруппы
 
             """ Обработка файла """
             # Ошибки в файле автоматически корректируются, но возможны исключения
 
             # Считывание расписания для выбранной группы
-            book = crr.prepare(self.sheet, group, row_s, f2)
+            book = crr.prepare(self.sheet, group, row_s, f3)
             # Если считывание провалилось, дропнуть ошибку
             if type(book).__name__ == 'BadDataError':
                 self.ErDo(self.book)
             else:
                 # Парсинг считанного расписания
-                book = crp.parser(book, year, f3, f1)
+                book = crp.parser(book, year, f1, f2, f4)
                 # Если парсинг провалился, дропнуть ошибку
                 if type(book).__name__ == 'BadDataError':
                     self.ErDo(self.book)

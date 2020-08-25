@@ -63,7 +63,11 @@ for i in range(8):
     bd_parse   = crp.parser(bd_process, year, True, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    #crj.save_json(bd_parse, analysis, group)
+    crj.save_json(bd_parse, analysis, group)
+    p_bd, a_bd = crj.load_json(f'Data/data_{group}.json')
+    print(p_bd)
+    print(a_bd)
+    print()
     book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
     crw.save_resp(book, name)
 

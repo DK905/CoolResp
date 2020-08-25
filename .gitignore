@@ -1,8 +1,13 @@
 __pycache__
+build
+dist
 *.pyc
 *.bat
 *.spec
 *.pptx
 *.txt
 *.ui
-RETEST.py
+*.qml
+main_TST.py
+Tests (small).py
+Tests (big).py
