@@ -127,6 +127,7 @@ def expand_dates(dates : 'Список подстрок с датами пред
 
 
 def parser(trash : 'База обработки',
+           timey : 'Период расписания',
            year  : 'Год расписания',
            p_yn  : 'Флаг сокращения преподов',
            a_yn  : 'Флаг сокращения предметов',
@@ -300,6 +301,8 @@ def parser(trash : 'База обработки',
 
                     """ Форматирование дат, типа пары и подгруппы """
                     for f in range(len(dtg)):
+                        if not dtg[f][0]:
+                            dtg[f][0] = [f'с {timey[0]} по {timey[1]}']
                         dtg[f][0] = expand_dates(dtg[f][0], year, len(day_num)-1)
                         if not dtg[f][1]: # Хз как, но порой тип пары всё равно отсутствует
                             dtg[f][1].append(defaults[1])

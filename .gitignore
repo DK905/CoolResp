@@ -1,6 +1,10 @@
 __pycache__
-build
-dist
+build/**
+dist/**
+Data/**
+Примеры/**
+*.vsdx
+*.json
 *.pyc
 *.bat
 *.spec

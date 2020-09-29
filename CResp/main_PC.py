@@ -3,6 +3,12 @@
 
 """
 
+""" Информация о приложении """
+ORGANIZATION_NAME = 'DK905'
+ORGANIZATION_DOMAIN = 'vk.com/dk905'
+APPLICATION_NAME = 'CoolResp'
+SETTINGS_TRAY = 'settings/tray'
+
 """ Подключение модулей обработки """
 from modules import CR_reader  as crr   # Считывание таблицы в базу разбора для конкретной группы
 from modules import CR_parser  as crp   # Парсинг базы разбора в нормальную БД для каждой логической записи
@@ -11,7 +17,8 @@ from modules import CR_writter as crw   # Форматная запись БД �
 
 """ Подключение элементов GUI """
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QWidget
-from CR_GUI_PC       import Ui_MainWindow
+from GUI.PC.main_gui import Ui_MainWindow
+from PyQt5.QtCore    import QCoreApplication, QSettings
 from webbrowser      import open as open_link
 from pyperclip       import copy as cp
 from sys             import exit as close_app
@@ -28,6 +35,10 @@ class my_window(QMainWindow):
         super(my_window, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Объект настроек приложения
+        self.ui.settings = QSettings('CoolResp', 'DK905', self)
+        self.LoadSet()
 
         # Реакция на выбор репозитория
         self.ui.action_1.triggered.connect(lambda: open_link('https://github.com/DK905/CoolResp'))
@@ -55,6 +66,68 @@ class my_window(QMainWindow):
 
         # Реакция на двойной клик по логу
         self.ui.listWidget.itemDoubleClicked.connect(self.CopyLog)
+
+    # Закрытие приложения должно сохранять настройки
+    def closeEvent(self, event):
+        self.SaveSet()
+        super().closeEvent(event)
+
+    # Функция сохранения настроек приложения
+    def SaveSet(self):
+        try:
+            self.ui.settings.beginGroup('All')
+            self.ui.settings.setValue('PathFile',  self.ui.textBox_1.text())
+            self.ui.settings.setValue('Switching', self.ui.toogleButton_1.text())
+            self.ui.settings.endGroup()
+
+            self.ui.settings.beginGroup('Briefs')
+            self.ui.settings.setValue('Prepods',  self.ui.checkBox_1.checkState())
+            self.ui.settings.setValue('Predmets', self.ui.checkBox_2.checkState())
+            self.ui.settings.setValue('Cabinets', self.ui.checkBox_3.checkState())
+            self.ui.settings.setValue('Groups',   self.ui.checkBox_4.checkState())
+            self.ui.settings.endGroup()
+
+            self.ui.settings.beginGroup('NGroups')
+            self.ui.settings.setValue('Two',   self.ui.comboBox_3.currentIndex())
+            self.ui.settings.setValue('Three', self.ui.comboBox_4.currentIndex())            
+            self.ui.settings.endGroup()
+
+        except:
+            pass
+
+    # Функция загрузки настроек приложения
+    def LoadSet(self):
+        try:
+            # Группа общих настроек
+            self.ui.settings.beginGroup('All')
+            if self.ui.settings.value('PathFile'):
+                self.ui.textBox_1.setText(self.ui.settings.value('PathFile'))
+            if self.ui.settings.value('Switching') and self.ui.settings.value('Switching') != self.ui.toogleButton_1.text():
+                self.Turn()
+            self.ui.settings.endGroup()
+
+            # Группа сокращалок
+            self.ui.settings.beginGroup('Briefs')
+            if self.ui.settings.value('Prepods'):
+                self.ui.checkBox_1.setCheckState(self.ui.settings.value('Prepods'))
+            if self.ui.settings.value('Predmets'):
+                self.ui.checkBox_2.setCheckState(self.ui.settings.value('Predmets'))
+            if self.ui.settings.value('Cabinets'):
+                self.ui.checkBox_3.setCheckState(self.ui.settings.value('Cabinets'))
+            if self.ui.settings.value('Groups'):
+                self.ui.checkBox_4.setCheckState(self.ui.settings.value('Groups'))
+            self.ui.settings.endGroup()
+
+            # Группа выбора подгрупп
+            self.ui.settings.beginGroup('NGroups')
+            if self.ui.settings.value('Two'):
+                self.ui.comboBox_3.setCurrentIndex(self.ui.settings.value('Two'))
+            if self.ui.settings.value('Three'):
+                self.ui.comboBox_4.setCurrentIndex(self.ui.settings.value('Three'))
+            self.ui.settings.endGroup()
+
+        except:
+            pass
 
     # Обработка ошибки
     def ErDo(self, text):
@@ -170,7 +243,7 @@ class my_window(QMainWindow):
                 self.ErDo(self.book)
             else:
                 # Парсинг считанного расписания
-                book = crp.parser(book, year, f1, f2, f4)
+                book = crp.parser(book, timey, year, f1, f2, f4)
                 # Если парсинг провалился, дропнуть ошибку
                 if type(book).__name__ == 'BadDataError':
                     self.ErDo(self.book)
@@ -211,7 +284,7 @@ class my_window(QMainWindow):
     # Сворачивание логов
     def Turn(self):
         self.ui.toogleButton_1.setEnabled(False)
-        if self.height() > 500:
+        if self.ui.toogleButton_1.text() == '▲':
             self.ui.toogleButton_1.setToolTip('Развернуть логи')
             self.ui.toogleButton_1.setText('▼')
             self.setFixedSize(581, 317)
@@ -228,14 +301,20 @@ class my_window(QMainWindow):
 
 
 """ Запуск интерфейса """
-# Создание процесса приложения
-app = QApplication([])
+if __name__ == '__main__':
+    # Подключение свойств приложения
+    QCoreApplication.setApplicationName(ORGANIZATION_NAME)
+    QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
+    QCoreApplication.setApplicationName(APPLICATION_NAME)
 
-# Инициализация объекта окна приложения
-application = my_window()
+    # Создание процесса приложения
+    app = QApplication([])
 
-# Запуск окна приложения
-application.show()
+    # Инициализация объекта окна приложения
+    application = my_window()
 
-# Выход из приложения
-close_app(app.exec())
+    # Запуск окна приложения
+    application.show()
+
+    # Выход из приложения
+    close_app(app.exec())

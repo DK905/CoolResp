@@ -27,15 +27,15 @@ from openpyxl.styles import NamedStyle, Alignment, Border, Font, GradientFill, P
 st_title = NamedStyle(name = 'Шапка')
 st_title.font = Font(name = 'Book Antiqua', size = 14)
 st_title.alignment = Alignment(horizontal = 'center', vertical = 'center')
-st_title.border = Border(left = Side(border_style = 'medium'),  right = Side(border_style = 'medium'),
-                         top  = Side(border_style = 'medium'), bottom = Side(border_style = 'medium'))
+st_title.border = Border(left = Side(border_style = 'thick'),  right = Side(border_style = 'thick'),
+                         top  = Side(border_style = 'thick'), bottom = Side(border_style = 'thick'))
 
 # Стиль дней
 st_days = NamedStyle(name = 'Дни')
 st_days.font = Font(name = 'Bookman Old Style', size = 14, bold = True)
 st_days.alignment = Alignment(horizontal = 'center', vertical = 'center', textRotation = 90)
-st_days.border = Border(left = Side(border_style = 'medium'), right  = Side(border_style = 'medium'),
-                        top  = Side(border_style = 'medium'), bottom = Side(border_style = 'medium'))
+st_days.border = Border(left = Side(border_style = 'thick'), right  = Side(border_style = 'thick'),
+                        top  = Side(border_style = 'thick'), bottom = Side(border_style = 'thick'))
 
 # Стиль базовой ячейки
 st_baze = NamedStyle(name = 'Базовая ячейка')
@@ -48,7 +48,7 @@ st_baze.border = Border(left = Side(border_style = 'thin'), right  = Side(border
 st_razn = NamedStyle(name = 'Инфополе')
 st_razn.font = Font(name = 'Plantagenet Cherokee', size = 14)
 st_razn.alignment = Alignment(horizontal = 'center', vertical = 'center', wrap_text = True)
-st_razn.border = Border(left = Side(border_style = 'medium'), right  = Side(border_style = 'medium'),
+st_razn.border = Border(left = Side(border_style = 'thick'), right  = Side(border_style = 'thick'),
                         top  = Side(border_style = 'thin'),   bottom = Side(border_style = 'thin'))
 
 # Стиль пустой ячейки
@@ -84,6 +84,8 @@ def time_resp(period : 'Период расписания',
             tdt.append([s, dt_start])
             dt_start += timedelta(days = 1)
         dt_start += timedelta(days = 1)
+        if dt_start == dt_final and dt_start.weekday() != 5:
+            tdt.append([s, dt_start])
 
     # Возврат списка границ учебных недель
     return tdt
@@ -405,7 +407,7 @@ def visual(wb : 'Частично форматированная книга'
                     ws.cell(column=col, row=de).border = Border(left   = ws.cell(column=col, row=de).border.left,
                                                                 right  = ws.cell(column=col, row=de).border.right,
                                                                 top    = ws.cell(column=col, row=de).border.top,
-                                                                bottom = Side(border_style = 'medium'))
+                                                                bottom = Side(border_style = 'thick'))
 
                     # Объединить день, но только когда обход уже на последнем столбце (иначе творится дичь + ненужное выделение)
                     if col == ws.max_column:

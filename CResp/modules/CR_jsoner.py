@@ -5,7 +5,11 @@
 """
 
 # Импорт умолчаний
-from modules.CR_dataset import BadDataError
+try:
+    from modules.CR_dataset import BadDataError
+except:
+    from CR_dataset import BadDataError
+
 # Задание директории для сохранения данных программы
 data_dyr = 'Data'
 
