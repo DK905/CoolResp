@@ -307,10 +307,10 @@ universus114@mail.ru
         self.checkBox_2.setToolTip('Сокращать названия предметов?')
         # Переключатель "сокращать корпуса кабинетов?"
         self.checkBox_3.setText(_translate("MainWindow", 'Кабинеты'))
-        self.checkBox_3.setToolTip('Сокращать корпуса кабинетов?')
+        self.checkBox_3.setToolTip('Указывать корпуса кабинетов?')
         # Переключатель "сокращать п/гр в подгруппах?"
         self.checkBox_4.setText(_translate("MainWindow", 'Подгруппы'))
-        self.checkBox_4.setToolTip('Сокращать подгруппы до номеров?')
+        self.checkBox_4.setToolTip('Скрывать "пгр" у подгрупп?')
 
         """ Блок конвертации """
         self.pushButton_3.setText(_translate("MainWindow", 'Конвертировать'))

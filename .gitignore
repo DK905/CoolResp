@@ -12,6 +12,6 @@ Data/**
 *.txt
 *.ui
 *.qml
-main_TST.py
+main_MOB.py
 Tests (small).py
 Tests (big).py

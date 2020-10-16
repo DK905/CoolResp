@@ -13,7 +13,7 @@ from datetime import date as dt_date, timedelta
 from re import findall, fullmatch, match, search, split as rsplit, sub
 
 # Импорт умолчаний и сокращений для типов пар
-from modules.CR_dataset import BadDataError, days_names, defaults, mos, mos_s, time_budni, time_vihod, tip_list
+from modules.CR_dataset import days_names, defaults, mos, mos_s, time_budni, time_vihod, tip_list
 
 # Импорт команд обработки ячеек EXCEL из модуля openpyxl
 from openpyxl import Workbook
@@ -440,28 +440,23 @@ def create_resp(parse    : 'База парсинга',
                 ) ->       'Отформатированная книга расписания':
 
     """ Функция создания форматированного расписания из БД парсинга """
-    try:
-        # Создание новой таблицы
-        wb = Workbook()
+    # Создание новой таблицы
+    wb = Workbook()
 
-        # Выделение учебных недель
-        times = time_resp(interval, year)
+    # Выделение учебных недель
+    times = time_resp(interval, year)
 
-        # Заполнение типового шаблона таблицы
-        wb = sheet_and_headers(wb, times)
+    # Заполнение типового шаблона таблицы
+    wb = sheet_and_headers(wb, times)
 
-        # Заполнение информационной части таблицы
-        wb = fill_base(wb, parse, a_bd, times, grp2, grp3)
+    # Заполнение информационной части таблицы
+    wb = fill_base(wb, parse, a_bd, times, grp2, grp3)
 
-        # Форматирование информационной части таблицы
-        wb = visual(wb)
+    # Форматирование информационной части таблицы
+    wb = visual(wb)
 
-        # Если всё ок, вернуть отформатированную таблицу
-        return wb
-
-    except:
-        # Если форматирование провалилось (чего быть не должно), дропнуть ошибку
-        return BadDataError('Расписание не удалось отформатировать!')
+    # Если всё ок, вернуть отформатированную таблицу
+    return wb
 
 
 def save_resp(book : 'Сохраняемая книга',

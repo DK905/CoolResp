@@ -61,7 +61,7 @@ group = groups[0]
 name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
 #print(name)
 bd_process = crr.prepare(sheet, group, row_start, True)
-bd_parse   = crp.parser(bd_process, year, True, False, True)
+bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
 #crp.print_bd(bd_parse, group, timey_wimey, year)
 analysis   = cra.analyze_bd(bd_parse)
 crj.save_json(bd_parse, analysis, group)
@@ -71,7 +71,7 @@ crj.save_json(bd_parse, analysis, group)
 #crw.save_resp(book, name)
 
 
-"""
+#"""
 # Тесты с одной группой на листе
 for i in range(8):
     book   = crr.read_book(test1[i])
@@ -88,14 +88,14 @@ for i in range(8):
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
     crj.save_json(bd_parse, analysis, group)
-    p_bd, a_bd = crj.load_json(f'Data/data_{group}.json')
+    #p_bd, a_bd = crj.load_json(f'Data/data_{group}.json')
 
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
 # Тесты с одним листом, но несколькими группами
 for i in range(2):
@@ -113,32 +113,35 @@ for i in range(2):
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
     group = groups[1]
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
     if not i:
         group = groups[2]
         name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
         #print(name)
         bd_process = crr.prepare(sheet, group, row_start, True)
-        bd_parse   = crp.parser(bd_process, year, True, False, True)
+        bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
         #crp.print_bd(bd_parse, group, timey_wimey, year)
         analysis   = cra.analyze_bd(bd_parse)
-        book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-        crw.save_resp(book, name)
+        crj.save_json(bd_parse, analysis, group)
+        #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+        #crw.save_resp(book, name)
 
 
 for i in range(4):
@@ -156,21 +159,23 @@ for i in range(4):
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
     group = groups[1]
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
 
 for i in range(4):
@@ -188,20 +193,22 @@ for i in range(4):
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
 
     group = groups[1]
     name =  f'{path_save}/Респа для {str(group)} на {year} год' + '.xlsx'
     #print(name)
     bd_process = crr.prepare(sheet, group, row_start, True)
-    bd_parse   = crp.parser(bd_process, year, True, False, True)
+    bd_parse   = crp.parser(bd_process, timey_wimey, year, True, False, True)
     #crp.print_bd(bd_parse, group, timey_wimey, year)
     analysis   = cra.analyze_bd(bd_parse)
-    book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
-    crw.save_resp(book, name)
-"""
+    crj.save_json(bd_parse, analysis, group)
+    #book       = crw.create_resp(bd_parse, analysis, pdgr[0], pdgr[1], timey_wimey, year)
+    #crw.save_resp(book, name)
+#"""
 print(f'Обработано за {time() - start_time} секунд')

@@ -10,6 +10,7 @@ APPLICATION_NAME = 'CoolResp'
 SETTINGS_TRAY = 'settings/tray'
 
 """ Подключение модулей обработки """
+from modules.CR_dataset import er_list  # Импорт списка ошибок и рекомендаций по их фиксу
 from modules import CR_reader  as crr   # Считывание таблицы в базу разбора для конкретной группы
 from modules import CR_parser  as crp   # Парсинг базы разбора в нормальную БД для каждой логической записи
 from modules import CR_analyze as cra   # Анализатор БД, для подправки косяков и определения числа подгрупп
@@ -162,13 +163,16 @@ class my_window(QMainWindow):
     def SheetInfo(self):
         ind = self.ui.comboBox_1.currentText()
         self.sheet = self.book[ind]
-        self.groups = crr.choise_group(self.sheet)
-        if type(self.groups).__name__ == 'BadDataError':
-            self.ErDo(self.groups)
-        else:
+
+        try:
+            stage = 'Поиск групп на листе расписания'
+            self.groups = crr.choise_group(self.sheet)
             self.ui.listWidget.addItem(f'Список групп успешно считан!')
             self.ui.comboBox_2.addItems(list(map(str, self.groups[2])))
             self.ui.comboBox_2.blockSignals(False)
+
+        except Exception as msg:
+            self.ErDo(f'Ошибка на этапе «{stage}»\n{msg}')
 
     # Обнуление подгруженной информации
     def Disintegration(self):
@@ -187,30 +191,36 @@ class my_window(QMainWindow):
     def ConfirmPath(self):
         # Обнуление атрибутов
         self.Disintegration()
+
         # Считывание пути с текстового поля пути
         self.path = self.ui.textBox_1.text()
         if self.ui.listWidget.currentRow() > 0:
             self.ui.listWidget.addItem(' ')
         self.ui.listWidget.addItems([f'Подключаемый путь:', f'«{self.path}»'])
-        # Попытка считать книгу
-        self.book = crr.read_book(self.path)
-        # Если попытка провалилась, обнулить атрибуты и вывести ошибку
-        if type(self.book).__name__ == 'BadDataError':
-            self.ErDo(self.book)
-        # Если всё норм, продолжить подключение файла
-        else:
+
+        try:
+            # Попытка считать книгу
+            stage = 'Считывание книги'
+            self.book = crr.read_book(self.path)
             self.ui.listWidget.addItem(f'Файл расписания успешно подключен!')
-            # Попытка считать список листов в книге (бывают книги без листов)
+
+            # Попытка считать список листов в книге (бывают книги без листов)      
+            stage = 'Получение списка листов в книге'
             sheets = crr.choise_sheet(self.book)
-            if type(sheets).__name__ == 'BadDataError':
-                self.ErDo(self.sheets)
-            else:
-                self.ui.listWidget.addItem(f'Список листов успешно считан!')
-                # Добавить считанные названия листов в меню выбора листа
-                self.ui.comboBox_1.addItems(sheets)
-                self.ui.comboBox_1.blockSignals(False)
-                # Попытка считать с листа инфу о группах и т.п
-                self.SheetInfo()
+            self.ui.listWidget.addItem(f'Список листов успешно считан!')
+
+            # Добавить считанные названия листов в меню выбора листа
+            stage = 'Добавление листов в меню выбора'
+            self.ui.comboBox_1.addItems(sheets)
+            self.ui.comboBox_1.blockSignals(False)
+
+            # Попытка считать с листа инфу о группах и т.п
+            stage = 'Считывание инфы о группах с листа'
+            self.SheetInfo()
+
+        except Exception as msg:
+            self.ErDo(f'Ошибка на этапе «{stage}»\n{msg}')
+            
         
     # Конвертация расписания
     def Upgrade(self):
@@ -230,47 +240,41 @@ class my_window(QMainWindow):
             grp3  = self.ui.comboBox_4.currentIndex()     # Комбобокс выбора подгруппы "из 3-х"
             f1    = bool(self.ui.checkBox_1.checkState()) # Чекбокс сокращения препода
             f2    = bool(self.ui.checkBox_2.checkState()) # Чекбокс сокращения предмета
-            f3    = bool(self.ui.checkBox_3.checkState()) # Чекбокс сокращения кабинета
+            f3    = bool(self.ui.checkBox_3.checkState()) # Чекбокс урезки корпуска кабинета
             f4    = bool(self.ui.checkBox_4.checkState()) # Чекбокс сокращения подгруппы
 
             """ Обработка файла """
-            # Ошибки в файле автоматически корректируются, но возможны исключения
+            # Ошибки в файле автоматически корректируются, но исключения всегда найдут путь
 
-            # Считывание расписания для выбранной группы
-            book = crr.prepare(self.sheet, group, row_s, f3)
-            # Если считывание провалилось, дропнуть ошибку
-            if type(book).__name__ == 'BadDataError':
-                self.ErDo(self.book)
-            else:
+            try:
+                # Считывание расписания для выбранной группы
+                stage = 'Считывание расписания из файла'
+                book = crr.prepare(self.sheet, group, row_s, f3)
+
                 # Парсинг считанного расписания
+                stage = 'Парсинг расписания'
                 book = crp.parser(book, timey, year, f1, f2, f4)
-                # Если парсинг провалился, дропнуть ошибку
-                if type(book).__name__ == 'BadDataError':
-                    self.ErDo(self.book)
+
+                # Анализ запарсенного расписания
+                stage = 'Анализ расписания'
+                a_bd = cra.analyze_bd(book)
+
+                # Форматирование расписания (с учётом анализа)
+                stage = 'Форматирование расписания'
+                book = crw.create_resp(book, a_bd, grp2, grp3, timey, year)
+
+                # Выбор пути (путь к файлу, путь воды, путь огня, путь военкомата)
+                path = self.SaveFile(group, year)
+                if path == '.xlsx':
+                    self.ErDo('Сохранение было отменено пользователем.')
                 else:
-                    # Анализ запарсенного расписания 
-                    a_bd = cra.analyze_bd(book)
-                    # Если анализ провалился, дропнуть ошибку
-                    if type(a_bd).__name__ == 'BadDataError':
-                        self.ErDo(self.a_bd)
-                    else:
-                        # Форматирование расписания (с учётом анализа)
-                        book = crw.create_resp(book, a_bd, grp2, grp3, timey, year)
-                        # Если форматирование провалилось, дропнуть ошибку
-                        if type(book).__name__ == 'BadDataError':
-                            self.ErDo(self.book)
-                        else:
-                            # Выбор пути (путь к файлу, путь воды, путь огня, путь военкомата)
-                            path = self.SaveFile(group, year)
-                            if path == '.xlsx':
-                                self.ErDo('Сохранение было отменено пользователем.')
-                            else:
-                                try:
-                                    # Попытка сохранить расписание
-                                    crw.save_resp(book, path)
-                                    self.ui.listWidget.addItems([f'Расписание сохранено как:', f'«{path}»', ''])
-                                except:
-                                    self.ErDo('Сохранение не удалось!')
+                    # Попытка сохранения расписания. Возможно не удастся из-за прав доступа к памяти или нехватки места
+                    stage = 'Сохранение готового расписания'
+                    crw.save_resp(book, path)
+                    self.ui.listWidget.addItems([f'Расписание сохранено как:', f'«{path}»', ''])
+
+            except Exception as msg:
+                self.ErDo(f'Ошибка на этапе «{stage}»\n{msg}')
 
             """ Обратное включение кнопок """
             self.ui.pushButton_1.setEnabled(True)

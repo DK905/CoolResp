@@ -15,7 +15,7 @@ from pyexcel import get_book_dict as pxl_book
 from re import findall, fullmatch, match, search, split as rsplit, sub
 
 # Импорт умолчаний
-from modules.CR_dataset import BadDataError, days_names, defaults
+from modules.CR_dataset import days_names, defaults
 
 
 def read_book(file : 'Путь к файлу таблицы расписания'
@@ -27,14 +27,7 @@ def read_book(file : 'Путь к файлу таблицы расписания
 
     # Если выбран файл с расширением .xls/.xlsx, то попробовать открыть его
     if search(r'(?m)\.xlsx?$', file):
-        try:
-            return pxl_book(file_name = file)
-        except:
-            # Если открывается мимик, то это ошибка
-            return BadDataError('Ошибка, что-то не так с книгой!')
-    # Если расширение не то, то и открывать нечего
-    else:
-        return BadDataError('Ошибка, это не книга EXCEL!')
+        return pxl_book(file_name = file)
 
 
 def choise_sheet(d_book : 'Типизированный словарь из read_book'
@@ -44,9 +37,6 @@ def choise_sheet(d_book : 'Типизированный словарь из read
     # Если в книге есть листы, вернуть их список
     if list(d_book.keys()):
         return(list(d_book.keys()))
-    # Если листов нет, дропнуть ошибку
-    else:
-        return BadDataError('Нет листов - нет расписания')
 
 
 def choise_group(sheet : 'Типизированный словарь из read_book'
@@ -77,9 +67,6 @@ def choise_group(sheet : 'Типизированный словарь из read_
     # Если на листе есть список групп и период расписания, вернуть инфу
     if timey_wimey and grp_list:
         return [timey_wimey, year, grp_list, start]
-    # Если нету, то с расписанием что-то не так - дропнуть ошибку
-    else:
-        return BadDataError('А расписание-то ненастоящее! Нет периода или групп!')
 
 
 """                 Начальная стадия разбора расписания
@@ -125,7 +112,6 @@ def what_col(title : 'Шапка подтаблицы расписания',
     for ind, rec in enumerate(title):
         if str(rec) == str(group):
             return ind
-    return BadDataError('Группа не обнаружена на листе!')
 
 
 def repl_a(cab : 'Строка с кабинетами'
@@ -176,72 +162,68 @@ def prepare(sheet : 'Выбранный лист',
             ) ->    'Урезка таблицы, подготовленная к парсингу':
 
     """ Функция для подготовки расписания выбранной подгруппы к препарированию """
-    try:
-        trash = [] # БД разбора
+    trash = [] # БД разбора
 
-        # Расписание всегда идёт вплоть до "начальник УО"
-        for i in range(start+1, len(sheet)+1):
-            finita = [a for a in sheet[i] if search(r'(?i)начальник\s*уо', str(a))]
-            if finita:
-                end = i-1
-                break
+    # Расписание всегда идёт вплоть до "начальник УО"
+    for i in range(start+1, len(sheet)+1):
+        finita = [a for a in sheet[i] if search(r'(?i)начальник\s*уо', str(a))]
+        if finita:
+            end = i-1
+            break
 
-        sheet = sheet[start : end] # Первичная БД
+    sheet = sheet[start : end] # Первичная БД
 
-        if '' in sheet[0]:             # Если в шапке есть пустые значения, то в таблице могут быть пустые столбцы...
-            sheet = exterminate(sheet) # ...а пустые столбцы = штука, которая усложняет обработку
-        g = what_col(sheet[0], group)  # Определение столбца с инфой для выбранной группы
-        sheet = sheet[1:]              # Обрезка расписательной таблицы по шапке
+    if '' in sheet[0]:             # Если в шапке есть пустые значения, то в таблице могут быть пустые столбцы...
+        sheet = exterminate(sheet) # ...а пустые столбцы = штука, которая усложняет обработку
+    g = what_col(sheet[0], group)  # Определение столбца с инфой для выбранной группы
+    sheet = sheet[1:]              # Обрезка расписательной таблицы по шапке
 
-        # Регулярный шаблон для выбора дня недели (на случай, если где-то его нет)
-        days_pat = r'(?i)(.*л.*)|(.*в.*о.*к.*)|(.*с.*д.*)|(.*ч.*г.*)|(.*я.*)|(.*у.*б.*)'   
+    # Регулярный шаблон для выбора дня недели (на случай, если где-то его нет)
+    days_pat = r'(?i)(.*л.*)|(.*в.*о.*к.*)|(.*с.*д.*)|(.*ч.*г.*)|(.*я.*)|(.*у.*б.*)'   
 
-        for row in sheet:
-            """ Выделение конкретных частей новой записи в БД """
-            # День недели
-            if not row[0]: # День - общая ячейка, то есть значение есть только в левой верхней ячейке
-                day = trash[-1][0] # Следовательно, для общей ячейки, день берётся из предыдущей записи
-            else: # Но если день есть, то его нужно определить и привести к общему виду
-                 for ind_d, sovp in enumerate(findall(days_pat, row[0])[0]):
-                    if sovp:
-                        day = days_names[ind_d]
-                        break
+    for row in sheet:
+        """ Выделение конкретных частей новой записи в БД """
+        # День недели
+        if not row[0]: # День - общая ячейка, то есть значение есть только в левой верхней ячейке
+            day = trash[-1][0] # Следовательно, для общей ячейки, день берётся из предыдущей записи
+        else: # Но если день есть, то его нужно определить и привести к общему виду
+            for ind_d, sovp in enumerate(findall(days_pat, row[0])[0]):
+                if sovp:
+                    day = days_names[ind_d]
+                    break
 
-            # Номер пары
-            num = row[1]
+        # Номер пары
+        num = row[1]
 
-            # Ячейка с инфой о паре
-            if row[g] or row[g-1]: # Если инфа лежит не где-то в левой части объединённой ячейки
-                info = swap_quiz(row[g])
-            elif g > 2:
-                info = swap_quiz(merged_cells(row, g))
-            else:
-                info = ''
+        # Ячейка с инфой о паре
+        if row[g] or row[g-1]: # Если инфа лежит не где-то в левой части объединённой ячейки
+            info = swap_quiz(row[g])
+        elif g > 2:
+            info = swap_quiz(merged_cells(row, g))
+        else:
+            info = ''
 
-            # Кабинеты
-            if row[g+1]:
-                cabs = repl_a(row[g+1])
-                cabs = [repl_b(cb, dv_yn) for cb in rsplit(r'[;,]', cabs)
-                        if not fullmatch(r'[.,:; ]*', cb)]
-                if not dv_yn:
-                    # Исправление ['210', '212 УК№1', '329', '331 УК№5', '410 УК№1'] в полных записях
-                    for ind_cb in range(len(cabs)-1, -1, -1):
-                        # Если умолчание, то можно пропустить кабинет
-                        if cabs[ind_cb] == defaults[3] or cabs[ind_cb] == defaults[4]:
-                            continue
-                        if match(r'\d+', cabs[ind_cb]) and not match(r'\d+ УК№\d', cabs[ind_cb]):
-                            if search(r' УК№\d', cabs[ind_cb+1]):
-                                cabs[ind_cb] += search(r' УК№\d', cabs[ind_cb+1])[0]
-                            else:
-                                cabs[ind_cb] += ' УК№?'
-            else:
-                cabs = []
+        # Кабинеты
+        if row[g+1]:
+            cabs = repl_a(row[g+1])
+            cabs = [repl_b(cb, dv_yn) for cb in rsplit(r'[;,]', cabs)
+                    if not fullmatch(r'[.,:; ]*', cb)]
+            if not dv_yn:
+                # Исправление ['210', '212 УК№1', '329', '331 УК№5', '410 УК№1'] в полных записях
+                for ind_cb in range(len(cabs)-1, -1, -1):
+                    # Если умолчание, то можно пропустить кабинет
+                    if cabs[ind_cb] == defaults[3] or cabs[ind_cb] == defaults[4]:
+                        continue
+                    if match(r'\d+', cabs[ind_cb]) and not match(r'\d+ УК№\d', cabs[ind_cb]):
+                        if search(r' УК№\d', cabs[ind_cb+1]):
+                            cabs[ind_cb] += search(r' УК№\d', cabs[ind_cb+1])[0]
+                        else:
+                            cabs[ind_cb] += ' УК№?'
+        else:
+            cabs = []
 
-            # Запись в БД
-            trash.append([day, num, info, cabs])
+        # Запись в БД
+        trash.append([day, num, info, cabs])
 
-        # Если в процессе считывания не было косяков, то вернуть базу разбора
-        return trash
-
-    except:
-        BadDataError('Разбор расписания не удался, попробуйте исправить исходный файл!')
+    # Если в процессе считывания не было косяков, то вернуть базу разбора
+    return trash
