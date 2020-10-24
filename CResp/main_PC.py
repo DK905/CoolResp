@@ -134,7 +134,6 @@ class my_window(QMainWindow):
     def ErDo(self, text):
         text = str(text)
         self.ui.listWidget.addItems([text, ''])
-        self.Disintegration()
         self.ui.msgErr.setText(text)
         self.ui.msgErr.exec()
 
@@ -168,6 +167,10 @@ class my_window(QMainWindow):
             stage = 'Поиск групп на листе расписания'
             self.groups = crr.choise_group(self.sheet)
             self.ui.listWidget.addItem(f'Список групп успешно считан!')
+            # Обнуление списка групп
+            self.ui.comboBox_2.blockSignals(True)
+            self.ui.comboBox_2.clear()
+            # Добавление новых групп
             self.ui.comboBox_2.addItems(list(map(str, self.groups[2])))
             self.ui.comboBox_2.blockSignals(False)
 
@@ -220,6 +223,7 @@ class my_window(QMainWindow):
 
         except Exception as msg:
             self.ErDo(f'Ошибка на этапе «{stage}»\n{msg}')
+            self.Disintegration()
             
         
     # Конвертация расписания

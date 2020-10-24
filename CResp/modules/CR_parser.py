@@ -90,6 +90,8 @@ def expand_dates(dates : 'Список подстрок с датами пред
     # Список для дат записи
     all_dates = []
     for date in dates:
+        if len(date) < 5:
+            continue
         # Если дата вида "с 13.01 по 06.06"
         if search(dat_pat, date):
             start_end = search(dat_pat, date).groups()
