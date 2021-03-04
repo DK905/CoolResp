@@ -1,17 +1,13 @@
+CoolRespProject/GUI/Mobile/
 __pycache__
-build/**
-dist/**
-Data/**
-Примеры/**
-*.vsdx
-*.json
-*.pyc
-*.bat
-*.spec
-*.pptx
-*.txt
+/.idea
+/venv
+/dist
+/build
+main_mobile.py
+Р”Р»СЏ QML.txt
+Р¦РµР»Рё Рё РёРґРµРё.txt
+Compile.bat
 *.ui
-*.qml
-main_MOB.py
-Tests (small).py
-Tests (big).py
+*.vsdx
+*.pptx
