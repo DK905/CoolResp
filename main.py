@@ -1,6 +1,9 @@
 """ Описание модуля
 Стартовый модуль с прикручиванием UX к макету GUI, и запуском приложения
-Компилить как "pyinstaller --onefile Compile.spec"
+
+Компиляция: "pyinstaller --onefile Compile.spec"
+Генерация зависмостей: pip freeze > requirements.txt
+Восстановление зависимостей: pip install -r requirements.txt
 """
 
 """ Информация о приложении """
