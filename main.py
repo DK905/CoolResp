@@ -13,14 +13,14 @@ APPLICATION_NAME = 'CoolResp'
 SETTINGS_TRAY = 'settings/tray'
 
 """ Подключение модулей обработки """
-# Импорт списка ошибок и рекомендаций по их фиксу
-from CoolRespProject.modules.CR_dataset import er_list
+# Импорт умолчаний API
+from CoolRespProject.modules import CR_defaults as crd
 # Считывание таблицы в базу разбора для конкретной группы
 from CoolRespProject.modules import CR_reader as crr
 # Парсинг базы разбора в нормальную БД для каждой логической записи
 from CoolRespProject.modules import CR_parser as crp
-# Анализатор БД, для подправки косяков и определения числа подгрупп
-from CoolRespProject.modules import CR_analyze as cra
+# Швейцарский нож для дополнительной обработки
+from CoolRespProject.modules import CR_swiss as crs
 # Форматная запись БД в таблицу EXCEL
 from CoolRespProject.modules import CR_writter as crw
 
@@ -157,8 +157,8 @@ class CoolRespWindow(QMainWindow):
         self.ui.textBox_1.setText(path[0])
 
     # Диалоговое окно сохранения
-    def save_file(self, group, timey_wimey):
-        name = f"Респа для {group} на [{' - '.join(timey_wimey)}]" + '.xlsx'
+    def save_file(self, book):
+        name = f'{crs.create_name(book)}.xlsx'
         path = QFileDialog.getSaveFileName(self,
                                            'Сохранить файл',         # Название диалогового окна
                                            name,                     # Имя файла по умолчанию
@@ -171,11 +171,11 @@ class CoolRespWindow(QMainWindow):
 
     # Подгрузка основной инфы с листа
     def sheet_info(self):
-        ind = self.ui.comboBox_1.currentText()
-        self.sheet = self.book[ind]
+        sheet_name = self.ui.comboBox_1.currentText()
 
+        stage = 'Поиск групп на листе расписания'
         try:
-            stage = 'Поиск групп на листе расписания'
+            self.sheet = crr.take_sheet(self.book, sheet_name)
             self.groups = crr.choise_group(self.sheet)
             self.ui.listWidget.addItem(f'Список групп успешно считан!')
             # Обнуление списка групп
@@ -220,7 +220,7 @@ class CoolRespWindow(QMainWindow):
 
             # Попытка считать список листов в книге (бывают книги без листов)      
             stage = 'Получение списка листов в книге'
-            sheets = crr.choise_sheet(self.book)
+            sheets = crr.see_sheets(self.book)
             self.ui.listWidget.addItem(f'Список листов успешно считан!')
 
             # Добавить считанные названия листов в меню выбора листа
@@ -245,44 +245,40 @@ class CoolRespWindow(QMainWindow):
             self.ui.pushButton_2.setEnabled(False)
             self.ui.pushButton_3.setEnabled(False)
 
-            """ Считывание показаний с переключателей """
-            timey = self.groups[0]                         # Период расписания
-            year  = self.groups[1]                         # Год расписания
-            row_s = self.groups[3]                         # Начальная строка расписательной части
-            group = self.ui.comboBox_2.currentText()       # Комбобокс выбора группы
-            grp2  = self.ui.comboBox_3.currentIndex()      # Комбобокс выбора подгруппы "из 2-х"
-            grp3  = self.ui.comboBox_4.currentIndex()      # Комбобокс выбора подгруппы "из 3-х"
-            f1    = bool(self.ui.checkBox_1.checkState())  # Чекбокс сокращения препода
-            f2    = bool(self.ui.checkBox_2.checkState())  # Чекбокс сокращения предмета
-            f3    = bool(self.ui.checkBox_3.checkState())  # Чекбокс урезки корпуска кабинета
-            f4    = bool(self.ui.checkBox_4.checkState())  # Чекбокс сокращения подгруппы
-
             """ Обработка файла """
             # Ошибки в файле автоматически корректируются, но исключения всегда найдут путь
 
             try:
                 # Считывание расписания для выбранной группы
                 stage = 'Считывание расписания из файла'
-                book = crr.prepare(self.sheet, group, row_s, f3)
+                bd_process = crr.prepare(self.sheet,                        # Выбранный лист
+                                         self.ui.comboBox_2.currentText(),  # Выбранная группа
+                                         self.groups[3])                    # Диапазон расписания
 
                 # Парсинг считанного расписания
                 stage = 'Парсинг расписания'
-                book = crp.parser(book, timey, year, f1, f2, f4)
+                bd_parse = crp.parser(bd_process,      # Датасет расписания группы
+                                      self.groups[0],  # Период расписания
+                                      self.groups[1]   # Год расписания
+                                      )
 
-                # Анализ запарсенного расписания
-                stage = 'Анализ расписания'
-                a_bd = cra.analyze_bd(book)
-
-                # Форматирование расписания (с учётом анализа)
+                # Форматирование расписания
                 stage = 'Форматирование расписания'
-                book = crw.create_resp(book, a_bd, grp2, grp3, timey, year)
+                book = crw.create_resp(bd_parse,                                   # БД расписания
+                                       str(self.ui.comboBox_3.currentIndex()),     # Подгруппа, где две подгруппы
+                                       str(self.ui.comboBox_4.currentIndex()),     # Подгруппа, где три подгруппы
+                                       bool(self.ui.checkBox_2.checkState()),      # Флаг сокращения предмета
+                                       bool(self.ui.checkBox_1.checkState()),      # Флаг сокращения препода
+                                       not bool(self.ui.checkBox_4.checkState()),  # Флаг сокращения подгруппы
+                                       bool(self.ui.checkBox_3.checkState()))      # Флаг сокращения корпуса кабинета
 
-                # Выбор пути (путь к файлу, путь воды, путь огня, путь военкомата)
-                path = self.save_file(group, timey)
+                # Выбор пути к файлу
+                stage = 'Сохранение расписания'
+                path = self.save_file(bd_parse)
                 if path == '.xlsx':
                     self.error_action('Сохранение было отменено пользователем.')
                 else:
-                    # Попытка сохранения расписания. Возможно не удастся из-за прав доступа к памяти или нехватки места
+                    # Попытка сохранения расписания
                     stage = 'Сохранение готового расписания'
                     crw.save_resp(book, path)
                     self.ui.listWidget.addItems([f'Расписание сохранено как:', f'«{path}»', ''])
