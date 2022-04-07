@@ -13,12 +13,11 @@ APPLICATION_NAME = 'CoolResp'
 SETTINGS_TRAY = 'settings/tray'
 
 """ Подключение модулей обработки """
-# Импорт умолчаний API
-from CoolRespProject.modules import CR_defaults as crd
-# Считывание таблицы в базу разбора для конкретной группы
-from CoolRespProject.modules import CR_reader as crr
 # Парсинг базы разбора в нормальную БД для каждой логической записи
 from CoolRespProject.modules import CR_parser as crp
+# Импорт умолчаний API
+# Считывание таблицы в базу разбора для конкретной группы
+from CoolRespProject.modules import CR_reader as crr
 # Швейцарский нож для дополнительной обработки
 from CoolRespProject.modules import CR_swiss as crs
 # Форматная запись БД в таблицу EXCEL
@@ -26,22 +25,21 @@ from CoolRespProject.modules import CR_writter as crw
 
 """ Подключение элементов GUI """
 from CoolRespProject.GUI.PC.main_gui import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QWidget
+from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow
 from PyQt5.QtCore import QCoreApplication, QSettings
 from webbrowser import open as open_link
 from pyperclip import copy as cp
 from sys import exit as close_app
-
 
 """ Задание интерфейса """
 
 
 class CoolRespWindow(QMainWindow):
     """ Атрибуты для обработки расписания """
-    path   = ''  # Путь к обрабатываемой книге
-    book   = ''  # Открытая книга
-    sheet  = ''  # Выбор листа
-    groups = ''  # Строка с инфой о группах, периоде и т.п
+    path = ''  # Путь к обрабатываемой книге
+    book = ''  # Открытая книга
+    sheet = ''  # Выбор листа
+    groups_info = ''  # Строка с инфой о группах, периоде и т.п
 
     def __init__(self):
         super(CoolRespWindow, self).__init__()
@@ -88,19 +86,19 @@ class CoolRespWindow(QMainWindow):
     def save_settings(self):
         try:
             self.ui.settings.beginGroup('All')
-            self.ui.settings.setValue('PathFile',  self.ui.textBox_1.text())
+            self.ui.settings.setValue('PathFile', self.ui.textBox_1.text())
             self.ui.settings.setValue('Switching', self.ui.toogleButton_1.text())
             self.ui.settings.endGroup()
 
             self.ui.settings.beginGroup('Briefs')
-            self.ui.settings.setValue('Prepods',  self.ui.checkBox_1.checkState())
+            self.ui.settings.setValue('Prepods', self.ui.checkBox_1.checkState())
             self.ui.settings.setValue('Predmets', self.ui.checkBox_2.checkState())
             self.ui.settings.setValue('Cabinets', self.ui.checkBox_3.checkState())
-            self.ui.settings.setValue('Groups',   self.ui.checkBox_4.checkState())
+            self.ui.settings.setValue('Groups', self.ui.checkBox_4.checkState())
             self.ui.settings.endGroup()
 
             self.ui.settings.beginGroup('NGroups')
-            self.ui.settings.setValue('Two',   self.ui.comboBox_3.currentIndex())
+            self.ui.settings.setValue('Two', self.ui.comboBox_3.currentIndex())
             self.ui.settings.setValue('Three', self.ui.comboBox_4.currentIndex())
             self.ui.settings.endGroup()
 
@@ -114,7 +112,8 @@ class CoolRespWindow(QMainWindow):
             self.ui.settings.beginGroup('All')
             if self.ui.settings.value('PathFile'):
                 self.ui.textBox_1.setText(self.ui.settings.value('PathFile'))
-            if self.ui.settings.value('Switching') and self.ui.settings.value('Switching') != self.ui.toogleButton_1.text():
+            if self.ui.settings.value('Switching') and self.ui.settings.value(
+                    'Switching') != self.ui.toogleButton_1.text():
                 self.turn_logs()
             self.ui.settings.endGroup()
 
@@ -151,8 +150,8 @@ class CoolRespWindow(QMainWindow):
     # Диалоговое окно загрузки файла
     def open_file(self):
         path = QFileDialog.getOpenFileName(self,
-                                           'Выбрать файл',                         # Название диалогового окна
-                                           '.',                                    # Имя файла по умолчанию
+                                           'Выбрать файл',  # Название диалогового окна
+                                           '.',  # Имя файла по умолчанию
                                            'EXCEL таблицы(*.xls*);;Все файлы(*)')  # Поддерживаемые типы файлов
         self.ui.textBox_1.setText(path[0])
 
@@ -160,8 +159,8 @@ class CoolRespWindow(QMainWindow):
     def save_file(self, book):
         name = f'{crs.create_name(book)}.xlsx'
         path = QFileDialog.getSaveFileName(self,
-                                           'Сохранить файл',         # Название диалогового окна
-                                           name,                     # Имя файла по умолчанию
+                                           'Сохранить файл',  # Название диалогового окна
+                                           name,  # Имя файла по умолчанию
                                            'EXCEL таблицы(*.xlsx)')  # Формат для сохранения
 
         if not path[0].endswith('.xlsx'):  # Если нужно дописать формат
@@ -176,13 +175,13 @@ class CoolRespWindow(QMainWindow):
         stage = 'Поиск групп на листе расписания'
         try:
             self.sheet = crr.take_sheet(self.book, sheet_name)
-            self.groups = crr.choise_group(self.sheet)
+            self.groups_info = crr.group_choice(self.sheet)
             self.ui.listWidget.addItem(f'Список групп успешно считан!')
             # Обнуление списка групп
             self.ui.comboBox_2.blockSignals(True)
             self.ui.comboBox_2.clear()
             # Добавление новых групп
-            self.ui.comboBox_2.addItems(list(map(str, self.groups[2])))
+            self.ui.comboBox_2.addItems(list(map(str, self.groups_info['groups_info'])))
             self.ui.comboBox_2.blockSignals(False)
 
         except Exception as msg:
@@ -191,7 +190,7 @@ class CoolRespWindow(QMainWindow):
     # Обнуление подгруженной информации
     def disintegration(self):
         # Очистка свойств класса
-        self.path = self.book = self.sheet = self.groups = ''
+        self.path = self.book = self.sheet = self.groups_info = ''
         # Очистка листов
         self.ui.comboBox_1.blockSignals(True)
         self.ui.comboBox_1.clear()
@@ -208,7 +207,7 @@ class CoolRespWindow(QMainWindow):
 
         # Считывание пути с текстового поля пути
         self.path = self.ui.textBox_1.text()
-        if self.ui.listWidget.currentRow() > 0:
+        if self.ui.listWidget.currentRow() > 0:  # Логи выводятся в виджет построчно, начиная с первой строки
             self.ui.listWidget.addItem(' ')
         self.ui.listWidget.addItems([f'Подключаемый путь:', f'«{self.path}»'])
 
@@ -251,26 +250,26 @@ class CoolRespWindow(QMainWindow):
             try:
                 # Считывание расписания для выбранной группы
                 stage = 'Считывание расписания из файла'
-                bd_process = crr.prepare(self.sheet,                        # Выбранный лист
+                bd_process = crr.prepare(self.sheet,  # Выбранный лист
                                          self.ui.comboBox_2.currentText(),  # Выбранная группа
-                                         self.groups[3])                    # Диапазон расписания
+                                         self.groups_info['range'])  # Диапазон расписания
 
                 # Парсинг считанного расписания
                 stage = 'Парсинг расписания'
-                bd_parse = crp.parser(bd_process,      # Датасет расписания группы
-                                      self.groups[0],  # Период расписания
-                                      self.groups[1]   # Год расписания
+                bd_parse = crp.parser(bd_process,  # Датасет расписания группы
+                                      self.groups_info['period'],  # Период расписания
+                                      self.groups_info['year']  # Год расписания
                                       )
 
                 # Форматирование расписания
                 stage = 'Форматирование расписания'
-                book = crw.create_resp(bd_parse,                                   # БД расписания
-                                       str(self.ui.comboBox_3.currentIndex()),     # Подгруппа, где две подгруппы
-                                       str(self.ui.comboBox_4.currentIndex()),     # Подгруппа, где три подгруппы
-                                       bool(self.ui.checkBox_2.checkState()),      # Флаг сокращения предмета
-                                       bool(self.ui.checkBox_1.checkState()),      # Флаг сокращения препода
+                book = crw.create_resp(bd_parse,  # БД расписания
+                                       str(self.ui.comboBox_3.currentIndex()),  # Подгруппа, где две подгруппы
+                                       str(self.ui.comboBox_4.currentIndex()),  # Подгруппа, где три подгруппы
+                                       bool(self.ui.checkBox_2.checkState()),  # Флаг сокращения предмета
+                                       bool(self.ui.checkBox_1.checkState()),  # Флаг сокращения препода
                                        not bool(self.ui.checkBox_4.checkState()),  # Флаг сокращения подгруппы
-                                       bool(self.ui.checkBox_3.checkState()))      # Флаг сокращения корпуса кабинета
+                                       bool(self.ui.checkBox_3.checkState()))  # Флаг сокращения корпуса кабинета
 
                 # Выбор пути к файлу
                 stage = 'Сохранение расписания'

@@ -62,9 +62,12 @@ class AboutBox(QDialog):
 class Ui_MainWindow(object):
     """ Класс основного окна приложения """
 
+    def __init__(self):
+        self.settings = None
+
     def setupUi(self, MainWindow):
         """ Инициализация макета и UI """
-        
+
         """ Базовые параметры главного окна """
         MainWindow.setObjectName("MainWindow")
         MainWindow.setFixedSize(581, 678)
@@ -75,7 +78,7 @@ class Ui_MainWindow(object):
         """ Уведомление об ошибке """
         self.msgErr = QMessageBox(self.cw_main)
         self.msgErr.setWindowModality(True)
-        self.msgErr.setObjectName("msgErr")    
+        self.msgErr.setObjectName("msgErr")
 
         """ Блок верхнего меню """
         # Меню
@@ -97,7 +100,7 @@ class Ui_MainWindow(object):
         self.action_3 = QAction(MainWindow)
         self.action_3.setObjectName("action_3")
         self.menu.addAction(self.action_3)
-        
+
         self.menuBar.addAction(self.menu.menuAction())
 
         """ Краткая справка """
@@ -125,7 +128,7 @@ class Ui_MainWindow(object):
         # Кнопка подтверждения выбора
         self.pushButton_2 = QPushButton(self.groupBox_1)
         self.pushButton_2.setGeometry(QRect(500, 20, 31, 31))
-        self.pushButton_2.setObjectName("pushButton_2")        
+        self.pushButton_2.setObjectName("pushButton_2")
 
         """ Блок инфы, подгружаемой с листа """
         # Блок
