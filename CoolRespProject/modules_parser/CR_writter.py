@@ -1,65 +1,50 @@
-""" Информация о модуле
-Данный модуль предназначен для сохранения запарсенной базы расписания в виде отформатированной таблицы.
-При сохранении учитываются результаты анализа БД, что позволяет минимизировать визуальные ошибки.
-
-Примечание: openpyxl подгружает ячейку сразу по обращению к ней, из-за чего обработка ячейки удобна через _
+r"""Сохранение БД расписания группы в Excel-документ с нативной вёрсткой.
 
 """
 
-# Импорт умолчаний API
-import CoolRespProject.modules.CR_defaults as crd
-
-# Импорт швейцарского ножа API
-import CoolRespProject.modules.CR_swiss as crs
-
-# Импорт pandas для работы с данными
+import CoolRespProject.modules_parser.cr_defaults as crd
+import CoolRespProject.modules_parser.cr_swiss as crs
 import pandas as pd
-
-# Импорт стандартной библиотеки REGEX
 import re
-
-# Импорт команд обработки ячеек EXCEL из модуля openpyxl
 from openpyxl import Workbook
-
-# Импорт команд форматирования ячеек EXCEL из модуля openpyxl
 from openpyxl.styles import NamedStyle, Alignment, Border, Font, GradientFill, PatternFill, Side
 
 
 """ Константные стили и названия для оформления """
 # Стиль шапки
-st_title = NamedStyle(name = 'Шапка')
-st_title.font = Font(name = 'Book Antiqua', size = 14)
-st_title.alignment = Alignment(horizontal = 'center', vertical = 'center')
-st_title.border = Border(left = Side(border_style = 'thick'),  right = Side(border_style = 'thick'),
-                         top  = Side(border_style = 'thick'), bottom = Side(border_style = 'thick'))
+st_title = NamedStyle(name='Шапка')
+st_title.font = Font(name='Book Antiqua', size=14)
+st_title.alignment = Alignment(horizontal='center', vertical='center')
+st_title.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+                         top=Side(border_style='thick'), bottom=Side(border_style='thick'))
 
 # Стиль дней
-st_days = NamedStyle(name = 'Дни')
-st_days.font = Font(name = 'Bookman Old Style', size = 14, bold = True)
-st_days.alignment = Alignment(horizontal = 'center', vertical = 'center', textRotation = 90)
-st_days.border = Border(left = Side(border_style = 'thick'), right  = Side(border_style = 'thick'),
-                        top  = Side(border_style = 'thick'), bottom = Side(border_style = 'thick'))
+st_days = NamedStyle(name='Дни')
+st_days.font = Font(name='Bookman Old Style', size=14, bold=True)
+st_days.alignment = Alignment(horizontal='center', vertical='center', textRotation=90)
+st_days.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+                        top=Side(border_style='thick'), bottom=Side(border_style='thick'))
 
 # Стиль базовой ячейки
-st_baze = NamedStyle(name = 'Базовая ячейка')
-st_baze.font = Font(name = 'Plantagenet Cherokee', size = 14)
-st_baze.alignment = Alignment(horizontal = 'center', vertical = 'center', wrap_text = True)
-st_baze.border = Border(left = Side(border_style = 'thin'), right  = Side(border_style = 'thin'),
-                        top  = Side(border_style = 'thin'), bottom = Side(border_style = 'thin'))
+st_baze = NamedStyle(name='Базовая ячейка')
+st_baze.font = Font(name='Plantagenet Cherokee', size=14)
+st_baze.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+st_baze.border = Border(left=Side(border_style='thin'), right=Side(border_style='thin'),
+                        top=Side(border_style='thin'), bottom=Side(border_style='thin'))
 
 # Стиль для номеров пары и времени
-st_info = NamedStyle(name = 'Инфополе')
-st_info.font = Font(name = 'Plantagenet Cherokee', size = 14)
-st_info.alignment = Alignment(horizontal = 'center', vertical = 'center', wrap_text = True)
-st_info.border = Border(left = Side(border_style = 'thick'), right  = Side(border_style = 'thick'),
-                        top  = Side(border_style = 'thin'),   bottom = Side(border_style = 'thin'))
+st_info = NamedStyle(name='Инфополе')
+st_info.font = Font(name='Plantagenet Cherokee', size=14)
+st_info.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+st_info.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+                        top=Side(border_style='thin'), bottom=Side(border_style='thin'))
 
 # Стиль пустой ячейки
-st_null = NamedStyle(name = 'Круговерть пустоты')
-st_null.font = Font(name = 'Plantagenet Cherokee', size = 14)
-st_null.border = Border(left = Side(border_style = None), right  = Side(border_style = None),
-                        top  = Side(border_style = None), bottom = Side(border_style = None))
-st_null.fill = PatternFill(patternType = 'lightDown', start_color = '00ff27')
+st_null = NamedStyle(name='Круговерть пустоты')
+st_null.font = Font(name='Plantagenet Cherokee', size=14)
+st_null.border = Border(left=Side(border_style=None), right=Side(border_style=None),
+                        top=Side(border_style=None), bottom=Side(border_style=None))
+st_null.fill = PatternFill(patternType='lightDown', start_color='00ff27')
 
 # Названия столбцов
 parse_title = ['Дни', '№ пары', 'Время', 'Ауд', 'Преподаватель']

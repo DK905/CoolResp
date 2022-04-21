@@ -1,30 +1,19 @@
-""" Информация о модуле
-Данный модуль предназначен для парсинга разобранной базы расписания группы.
+r"""Парсинг датафрейма с ячейками расписания конкретной группы.
 
 """
 
-# Импорт умолчаний API
-import CoolRespProject.modules.CR_defaults as crd
-
-# Импорт швейцарского ножа API
-import CoolRespProject.modules.CR_swiss as crs
-
-# Импорт команд для обработки дат из модуля datetime
+import CoolRespProject.modules_parser.cr_defaults as crd
+import CoolRespProject.modules_parser.cr_swiss as crs
 from datetime import date as dt_date, timedelta
-
-# Импорт pandas для работы с данными
 import pandas as pd
-# Импорт numpy для работы с массивами
 import numpy as np
-
-# Импорт стандартной библиотеки REGEX
 import re
 
 
-def format_prep(lecturer: 'Подстрока форматируемого препода'
-                ) ->      'Отформатированный препод':
+def format_prep(lecturer: 'Форматируемая подстрока преподавателя'
+                ) ->      'Отформатированная подстрока преподавателя':
 
-    """ Функция форматирования препода """
+    """ Функция форматирования записи преподавателя """
     prep_pat1 = r'(?m)^([а-я. \d]+)\s'          # Должность препода
     prep_pat2 = r'([А-Я][а-я]+)\s*([А-Я.]{4})'  # Препод без должности
     # Если у препода в инициале не хватает второй точки, то доставить её
@@ -451,7 +440,7 @@ def parser(stuff: 'База обработки',
                     # То запись - уникальная
                     n_rec += 1
                     # А если нет совпадения, то больше шансов что препод отличается
-                    i_end = i-1 if i-1 >=0 else parse.shape[0]-1
+                    i_end = i-1 if (i-1) >= 0 else parse.shape[0]-1
                     if parse.loc[i_end]['teacher'] != parse.loc[i]['teacher']:
                         n_prp += 1
 
@@ -461,17 +450,17 @@ def parser(stuff: 'База обработки',
                 # Если препод по умолчанию, а записей несколько
                 if parse.loc[ind]['teacher'] == crd.DEF_TEACHER and n_rec > 1:
                     # Поставить кабинет по умолчанию
-                    parse.loc[ind]['cab'] = crd.DEF_CABS
+                    parse.loc[ind, 'cab'] = crd.DEF_CABS
                 # Если запись одна
                 else:                        
                     # Поставить первый кабинет из списка кабинетов ячейки
-                    parse.loc[ind]['cab'] = cabs[0]
+                    parse.loc[ind, 'cab'] = cabs[0]
             else:
                 # Если ФЗК для нескольких групп, то могут быть косяки
                 if (ind and
                         parse.loc[ind-1][:3].eq(parse.loc[ind][:3]).min() and
                         parse.loc[ind-1]['cab'] == crd.DEF_SPORT_CAB):
-                    parse.loc[ind]['cab'] = crd.DEF_SPORT_CAB
+                    parse.loc[ind, 'cab'] = crd.DEF_SPORT_CAB
                     continue
                 # Если число записей совпадает с числом кабинетов
                 if n_rec == len(cabs):
@@ -479,11 +468,11 @@ def parser(stuff: 'База обработки',
                     if ind == start or not parse.loc[ind-1][:5].eq(parse.loc[ind][:5]).min():
                         """ Итерация """
                         try:
-                            parse.loc[ind]['cab'] = next(it_cb)
+                            parse.loc[ind, 'cab'] = next(it_cb)
                         except:
-                            parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                            parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
                     else:
-                        parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                        parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
                 else:
                     # Если преподов столько же сколько и кабинетов
                     if n_prp == len(cabs):
@@ -491,11 +480,11 @@ def parser(stuff: 'База обработки',
                         if ind == start or parse.loc[ind-1]['teacher'] != parse.loc[ind]['teacher']:
                             """ Итерация """
                             try:
-                                parse.loc[ind]['cab'] = next(it_cb)
+                                parse.loc[ind, 'cab'] = next(it_cb)
                             except:
-                                parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                                parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
                         else:
-                            parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                            parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
                     else:
                         # Итерироваться при одном из условий:
                         if (ind == start or
@@ -508,11 +497,11 @@ def parser(stuff: 'База обработки',
                               parse.loc[ind]['type'] == crd.TIP_LIST[2]))):
                             """ Итерация """
                             try:
-                                parse.loc[ind]['cab'] = next(it_cb)
+                                parse.loc[ind, 'cab'] = next(it_cb)
                             except:
-                                parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                                parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
                         else:
-                            parse.loc[ind]['cab'] = parse.loc[ind-1]['cab']
+                            parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
 
     # Применение технической стандартизации к датафрейму
     parse = crs.use_standard(parse)

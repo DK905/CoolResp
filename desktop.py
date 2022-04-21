@@ -6,24 +6,18 @@
 Восстановление зависимостей: pip install -r requirements.txt
 """
 
-""" Информация о приложении """
-ORGANIZATION_NAME = 'DK905'
-ORGANIZATION_DOMAIN = 'vk.com/dk905'
-APPLICATION_NAME = 'CoolResp'
-SETTINGS_TRAY = 'settings/tray'
-
-""" Подключение модулей обработки """
+# # # Подключение модулей для работы парсера
 # Парсинг базы разбора в нормальную БД для каждой логической записи
-from CoolRespProject.modules import CR_parser as crp
+from CoolRespProject.modules_parser import cr_parser as crp
 # Импорт умолчаний API
 # Считывание таблицы в базу разбора для конкретной группы
-from CoolRespProject.modules import CR_reader as crr
+from CoolRespProject.modules_parser import cr_reader as crr
 # Швейцарский нож для дополнительной обработки
-from CoolRespProject.modules import CR_swiss as crs
+from CoolRespProject.modules_parser import cr_swiss as crs
 # Форматная запись БД в таблицу EXCEL
-from CoolRespProject.modules import CR_writter as crw
+from CoolRespProject.modules_parser import cr_writter as crw
 
-""" Подключение элементов GUI """
+# # # Подключение модулей для работы GUI
 from CoolRespProject.GUI.PC.main_gui import Ui_MainWindow
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow
 from PyQt5.QtCore import QCoreApplication, QSettings
@@ -31,9 +25,14 @@ from webbrowser import open as open_link
 from pyperclip import copy as cp
 from sys import exit as close_app
 
-""" Задание интерфейса """
+# # # Информация о приложении
+ORGANIZATION_NAME = 'DK905'
+ORGANIZATION_DOMAIN = 'vk.com/dk905'
+APPLICATION_NAME = 'CoolResp'
+SETTINGS_TRAY = 'settings/tray'
 
 
+# # # Задание интерфейса
 class CoolRespWindow(QMainWindow):
     """ Атрибуты для обработки расписания """
     path = ''  # Путь к обрабатываемой книге
@@ -266,10 +265,10 @@ class CoolRespWindow(QMainWindow):
                 book = crw.create_resp(bd_parse,  # БД расписания
                                        str(self.ui.comboBox_3.currentIndex()),  # Подгруппа, где две подгруппы
                                        str(self.ui.comboBox_4.currentIndex()),  # Подгруппа, где три подгруппы
-                                       bool(self.ui.checkBox_2.checkState()),  # Флаг сокращения предмета
-                                       bool(self.ui.checkBox_1.checkState()),  # Флаг сокращения препода
+                                       bool(self.ui.checkBox_2.checkState()),   # Флаг сокращения предмета
+                                       bool(self.ui.checkBox_1.checkState()),   # Флаг сокращения препода
                                        not bool(self.ui.checkBox_4.checkState()),  # Флаг сокращения подгруппы
-                                       bool(self.ui.checkBox_3.checkState()))  # Флаг сокращения корпуса кабинета
+                                       bool(self.ui.checkBox_3.checkState()))   # Флаг сокращения корпуса кабинета
 
                 # Выбор пути к файлу
                 stage = 'Сохранение расписания'
@@ -313,7 +312,7 @@ class CoolRespWindow(QMainWindow):
         self.ui.listWidget.addItems([f'Лог «{repr(item.text())}» скопирован!', ''])
 
 
-""" Запуск интерфейса """
+# # # Запуск интерфейса
 if __name__ == '__main__':
     # Подключение свойств приложения
     QCoreApplication.setApplicationName(ORGANIZATION_NAME)
