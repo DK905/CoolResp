@@ -9,7 +9,7 @@ import os
 from hashlib import sha256
 
 # # # Импорт модулей для работы сервера
-from flask import Flask, request, abort, jsonify, Response
+from flask import Flask, request, abort, jsonify, Response, send_file, make_response
 from CoolRespProject.modules_api import api_defaults as api_def
 from CoolRespProject.modules_api import api_database as api_db
 # Программный планировщик заданий (если нужны действия "по таймеру")
@@ -18,9 +18,10 @@ from CoolRespProject.modules_api import api_database as api_db
 # from werkzeug.utils import secure_filename
 
 # # # Импорт модулей для работы парсера
-from CoolRespProject.modules_parser import cr_reader as crr
-from CoolRespProject.modules_parser import cr_parser as crp
+import CoolRespProject.modules_parser.cr_reader as crr
+import CoolRespProject.modules_parser.cr_parser as crp
 import CoolRespProject.modules_parser.cr_swiss as crs
+import CoolRespProject.modules_parser.cr_writter as crw
 
 
 # Создание Flask-приложения
@@ -67,7 +68,9 @@ def read_book():
         file_ext = crs.check_object_extension(file)
         # Если расширение файла не поддерживается, вернуть код 415 - неподдерживаемый сервером медиа-формат
         if file_ext == api_def.EXTENSIONS['404']:
-            abort(Response('Файл должен иметь расширение .xls или .xlsx', 415))
+            abort(Response('Файл должен иметь расширение «.xls» или «.xlsx»', 415))
+            # abort(Response('Файл должен иметь расширение .xls или .xlsx', 415,
+            #                content_type='text/html; charset=utf-8'))
 
         # Сохранение файла в постоянную память сервера
         path_save = os.path.join(app.config['UPLOAD_FOLDER'], file_hash)  # f'{file_hash}.{file_ext}'
@@ -98,8 +101,8 @@ def read_book():
                     })
 
 
-@app.route('/parse-book/<file_hash>/<sheet_name>/<group_name>', methods=['POST'])
-def parse_book(file_hash, sheet_name, group_name):
+@app.route('/parse-book/<file_hash>/<sheet_name>/<group_name>/<result_type>', methods=['POST'])
+def parse_book(file_hash, sheet_name, group_name, result_type):
     """ Функция парсинга расписания """
 
     # Запрос из БД информации о файле
@@ -113,12 +116,6 @@ def parse_book(file_hash, sheet_name, group_name):
     api_db.update_time(file_hash)
     # Выделение расширения файла из запроса к БД
     file_ext = file_info['extension']
-    # # Выделение флагов для форматирования
-    # f1 = request.args.get('f1', default=False, type=bool)
-    # f2 = request.args.get('f2', default=False, type=bool)
-    # f3 = request.args.get('f3', default=False, type=bool)
-    # f4 = request.args.get('f4', default=False, type=bool)
-    # print(f1, f2, f3, f4)
 
     # Подгрузка книги по хешу
     book = crr.read_book(os.path.join(app.config['UPLOAD_FOLDER'], file_hash),
@@ -133,13 +130,29 @@ def parse_book(file_hash, sheet_name, group_name):
     # Парсинг
     df = crp.parser(bd_process, period, year)
 
-    # f_book = crw.create_resp(df, g2, g3)
-    # crw.save_resp(f_book, f'Tests/Results/{crs.create_name(df)}.xlsx')
-
-    return df.to_json(orient='records',    # Стиль JSON файла
-                      indent=4,            # Уровень отступов внутри файла
-                      force_ascii=False,   # Запись в ASCII?
-                      date_format='iso')   # Формат записи даты
+    # Тип результата может быть json или excel
+    if result_type == 'json':
+        return df.to_json(orient='records',   # Стиль JSON файла
+                          indent=4,           # Уровень отступов внутри файла
+                          force_ascii=False,  # Запись в ASCII?
+                          date_format='iso')  # Формат записи даты
+    elif result_type == 'excel':
+        # Выделение флагов для форматирования
+        g2 = request.args.get('g2', default='0', type=bool)
+        g3 = request.args.get('g3', default='0', type=bool)
+        f1 = request.args.get('f1', default=False, type=bool)
+        f2 = request.args.get('f2', default=False, type=bool)
+        f3 = request.args.get('f3', default=False, type=bool)
+        f4 = request.args.get('f4', default=False, type=bool)
+        result = crw.create_resp(df, g2, g3, f1, f2, f3, f4)
+        symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+                   u"abvgdeejzijklmnoprstufhzcss_y_euaABVGDEEJZIJKLMNOPRSTUFHZCSS_Y_EUA")
+        tr = {ord(a): ord(b) for a, b in zip(*symbols)}
+        file_name = f'{crs.create_name(df)}.xlsx'.translate(tr)
+        crw.save_resp(result, os.path.join(app.config['UPLOAD_FOLDER'], file_name))
+        return make_response(send_file(os.path.join(app.config['UPLOAD_FOLDER'], file_name)))
+    else:
+        return Response('None', 404)
 
 
 def delete_file(filename):
