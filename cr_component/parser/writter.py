@@ -2,8 +2,8 @@ r"""Сохранение БД расписания группы в Excel-док�
 
 """
 
+import CoolRespProject.modules_parser.cr_additional as cra
 import CoolRespProject.modules_parser.cr_defaults as crd
-import CoolRespProject.modules_parser.cr_swiss as crs
 import pandas as pd
 import re
 from openpyxl import Workbook
@@ -12,39 +12,39 @@ from openpyxl.styles import NamedStyle, Alignment, Border, Font, GradientFill, P
 
 """ Константные стили и названия для оформления """
 # Стиль шапки
-st_title = NamedStyle(name='Шапка')
-st_title.font = Font(name='Book Antiqua', size=14)
-st_title.alignment = Alignment(horizontal='center', vertical='center')
-st_title.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+ST_TITLE = NamedStyle(name='Шапка')
+ST_TITLE.font = Font(name='Book Antiqua', size=14)
+ST_TITLE.alignment = Alignment(horizontal='center', vertical='center')
+ST_TITLE.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
                          top=Side(border_style='thick'), bottom=Side(border_style='thick'))
 
 # Стиль дней
-st_days = NamedStyle(name='Дни')
-st_days.font = Font(name='Bookman Old Style', size=14, bold=True)
-st_days.alignment = Alignment(horizontal='center', vertical='center', textRotation=90)
-st_days.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+ST_DAYS = NamedStyle(name='Дни')
+ST_DAYS.font = Font(name='Bookman Old Style', size=14, bold=True)
+ST_DAYS.alignment = Alignment(horizontal='center', vertical='center', textRotation=90)
+ST_DAYS.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
                         top=Side(border_style='thick'), bottom=Side(border_style='thick'))
 
 # Стиль базовой ячейки
-st_baze = NamedStyle(name='Базовая ячейка')
-st_baze.font = Font(name='Plantagenet Cherokee', size=14)
-st_baze.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-st_baze.border = Border(left=Side(border_style='thin'), right=Side(border_style='thin'),
-                        top=Side(border_style='thin'), bottom=Side(border_style='thin'))
+ST_COMMON = NamedStyle(name='Базовая ячейка')
+ST_COMMON.font = Font(name='Plantagenet Cherokee', size=14)
+ST_COMMON.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+ST_COMMON.border = Border(left=Side(border_style='thin'), right=Side(border_style='thin'),
+                          top=Side(border_style='thin'), bottom=Side(border_style='thin'))
 
 # Стиль для номеров пары и времени
-st_info = NamedStyle(name='Инфополе')
-st_info.font = Font(name='Plantagenet Cherokee', size=14)
-st_info.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-st_info.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
+ST_INFO = NamedStyle(name='Инфополе')
+ST_INFO.font = Font(name='Plantagenet Cherokee', size=14)
+ST_INFO.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+ST_INFO.border = Border(left=Side(border_style='thick'), right=Side(border_style='thick'),
                         top=Side(border_style='thin'), bottom=Side(border_style='thin'))
 
 # Стиль пустой ячейки
-st_null = NamedStyle(name='Круговерть пустоты')
-st_null.font = Font(name='Plantagenet Cherokee', size=14)
-st_null.border = Border(left=Side(border_style=None), right=Side(border_style=None),
+ST_NULL = NamedStyle(name='Круговерть пустоты')
+ST_NULL.font = Font(name='Plantagenet Cherokee', size=14)
+ST_NULL.border = Border(left=Side(border_style=None), right=Side(border_style=None),
                         top=Side(border_style=None), bottom=Side(border_style=None))
-st_null.fill = PatternFill(patternType='lightDown', start_color='00ff27')
+ST_NULL.fill = PatternFill(patternType='lightDown', start_color='00ff27')
 
 # Названия столбцов
 parse_title = ['Дни', '№ пары', 'Время', 'Ауд', 'Преподаватель']
@@ -101,7 +101,7 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
                       ) -> 'Книга с заполненной основой: шапки, листы и базовые стили':
 
     """ Функция заполнения листов таблицы и их шапок """
-    
+
     # Заполнение листов таблицы и их шапок
     for d_ind, week in tt.iterrows():
         # Учебный месяц изменяется при определённом наборе условий
@@ -122,7 +122,7 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
             if not wb.sheetnames[0] == 'Sheet' and ws.max_column < 5:
                 # Переименовать текущий месяц
                 ws.title = crd.MONTHS.loc[week['monday'].month, 'full_name']
-            
+
             # Если в следующем месяце будет всего одна неделя (на случай чумы или сессии), то ничего не менять
             elif (  # Если не выполняется групповое условие, где текущая запись - последняя
                   not(d_ind+1 == tt.shape[0] or
@@ -130,7 +130,7 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
                       d_ind and
                       # Но месяц понедельника предыдущей, текущей и следующей записей не совпадает
                       tt.loc[d_ind-1, 'monday'].month != week['monday'].month != tt.loc[d_ind+1, 'monday'].month)):
-                
+
                 # Если добавляется первый лист, то можно просто переименовать стандартный
                 if wb.sheetnames[0] == 'Sheet':
                     # Переключиться на актуальный лист таблицы
@@ -140,17 +140,17 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
                 # Если обычный новый учебный месяц, то создать новый лист
                 else:
                     # Создать лист
-                    wb.create_sheet(crd.MONTHS.loc[week['monday'].month, 'full_name'])                    
+                    wb.create_sheet(crd.MONTHS.loc[week['monday'].month, 'full_name'])
 
                 # Сделать актуальным листом последний лист
                 ws = wb.worksheets[-1]
                 # Заполнение первых трёх столбцов шапки
-                _ = ws.cell(column=ws.max_column,   row=1, value=parse_title[0]).style = st_title
-                _ = ws.cell(column=ws.max_column+1, row=1, value=parse_title[1]).style = st_title
-                _ = ws.cell(column=ws.max_column+1, row=1, value=parse_title[2]).style = st_title
+                _ = ws.cell(column=ws.max_column,   row=1, value=parse_title[0]).style = ST_TITLE
+                _ = ws.cell(column=ws.max_column+1, row=1, value=parse_title[1]).style = ST_TITLE
+                _ = ws.cell(column=ws.max_column+1, row=1, value=parse_title[2]).style = ST_TITLE
 
         # Запись учебной недели в красивом формате
-        _ = ws.cell(column=ws.max_column+1, row=1, value=week['diap_string']).style = st_title
+        _ = ws.cell(column=ws.max_column+1, row=1, value=week['diap_string']).style = ST_TITLE
 
         # Если неделя была последней
         if d_ind == tt.shape[0]-1:
@@ -166,9 +166,9 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
 
         # Эти стили нужно применять только когда лист уже заполнен
         # Применить стиль к кабинетам
-        _ = pred.cell(column=pred.max_column+1, row=1, value=parse_title[3]).style = st_title
+        _ = pred.cell(column=pred.max_column+1, row=1, value=parse_title[3]).style = ST_TITLE
         # Применить стиль к преподам
-        _ = pred.cell(column=pred.max_column+1, row=1, value=parse_title[4]).style = st_title
+        _ = pred.cell(column=pred.max_column+1, row=1, value=parse_title[4]).style = ST_TITLE
 
     # Отдельная пробежка по листам для занесения данных об учебных неделях: не в первом цикле из-за глюков openpyxl
     ind = 0
@@ -183,7 +183,7 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
 
     # Вернуть книгу с готовым шаблоном и обновление списка учебных недель
     return wb
-  
+
 
 def fill_base(wb: 'Объект книги EXCEL из openpyxl',
               df: 'База парсинга',
@@ -207,12 +207,12 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
 
     # Формирование списка датафреймов уникальных наборов (для итерации по группам записей)
     dft = [rec.reset_index() for ind, rec in dft]
-    
+
     days = iter(crd.DAYS_NAMES)  # Итератор по дням
     day = crd.DAYS_NAMES[0]      # Переход на первый день
     act_row = 1                  # Индекс актуальной строки на листе
     act_grp = 0                  # Индекс актуальной группы записей
-    
+
     # Итерация по номерам пары для всех заданных дней
     for num in range(crd.TIMETABLE.shape[0] * len(crd.DAYS_NAMES)):
         # Актуальный номер пары в привычной записи
@@ -231,26 +231,26 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
 
         # Занести на все листы текущий день, номер пары и её время
         # Стилизовать ячейки кабинетов и преподов
-        for ws in wb:            
+        for ws in wb:
             # Стилизовать и заполнить день недели
-            _ = ws.cell(column=1, row=act_row, value=day).style = st_days
+            _ = ws.cell(column=1, row=act_row, value=day).style = ST_DAYS
 
             # Стилизовать и заполнить номер пары
-            _ = ws.cell(column=2, row=act_row, value=act_num + 1).style = st_info
-            
+            _ = ws.cell(column=2, row=act_row, value=act_num + 1).style = ST_INFO
+
             # Время пары выбирается различно для выходных и рабочих дней
             if day != crd.DAYS_NAMES[5]:
                 # Если будни
-                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekdays']).style = st_info
+                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekdays']).style = ST_INFO
             else:
                 # Если суббота
-                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekends']).style = st_info
+                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekends']).style = ST_INFO
 
             # Стилизовать ячейку преподов
-            ws.cell(column=ws.max_column-1, row=act_row).style = st_info
-            
+            ws.cell(column=ws.max_column-1, row=act_row).style = ST_INFO
+
             # Стилизовать ячейку кабинетов
-            ws.cell(column=ws.max_column,   row=act_row).style = st_info    
+            ws.cell(column=ws.max_column,   row=act_row).style = ST_INFO
 
         # Проверить соответствие актуальной группы текущему дню и номеру пары
         if dft[act_grp].loc[0, 'day'] == day and dft[act_grp].loc[0, 'num'] == act_num+1:
@@ -279,7 +279,7 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
                     else:
                         val = pat_rec
                     # Стилизовать и заполнить ячейку инфы
-                    _ = ws.cell(column=act_col, row=act_row, value=val).style = st_baze
+                    _ = ws.cell(column=act_col, row=act_row, value=val).style = ST_COMMON
 
                     # Заполнение ячеек преподов и кабинетов
                     # Для корректного заполнения (умное добавление информации), ячейка разделяется
@@ -330,10 +330,10 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
 def is_merge(cell_1: 'Проверяемая ячейка №1',
              cell_2: 'Проверяемая ячейка №2',
              merges: 'Координатный список объединённых ячеек листа'
-             ) ->    'Координаты для объединения ячеек, либо False':
+             ) -> 'Координаты для объединения ячеек, либо False':
 
     """ Функция умной проверки пересечения ячеек для объединения """
-    
+
     # Во избежание попыток объединения пустых частей объединённых ячеек
     # Если обе ячейки пустые
     if not cell_1.value and not cell_2.value:
@@ -385,7 +385,7 @@ def visual(wb:  'Частично форматированная книга'
            ) -> 'Полностью форматированная книга':
 
     """ Функция форматирования расписания """
-    
+
     # Проход по каждому листу в книге
     for ws in wb:
         # Первый прогон - проверка "Есть ли пустые строки В КОНЦЕ дня"
@@ -395,7 +395,7 @@ def visual(wb:  'Частично форматированная книга'
             if all([not ws.cell(column=ws.max_column-1, row=row).value,
                     not ws.cell(column=ws.max_column,   row=row).value,
                     row == ws.max_row or ws.cell(column=1, row=row).value != ws.cell(column=1, row=row+1).value
-                   ]):
+                    ]):
                 ws.delete_rows(row)  # Удалить строку
 
         # Второй прогон - выделение пустот
@@ -404,7 +404,7 @@ def visual(wb:  'Частично форматированная книга'
             for col in range(4, ws.max_column-1):
                 # Если ячейка пустая, применить к ней стиль пустой ячейки
                 if not ws.cell(column=col, row=row).value:
-                    ws.cell(column=col, row=row).style = st_null
+                    ws.cell(column=col, row=row).style = ST_NULL
 
         # Третий прогон - проверка "Слева - направо"
         for row in range(2, ws.max_row+1):
@@ -472,10 +472,10 @@ def visual(wb:  'Частично форматированная книга'
                         ws.merge_cells(start_row=row, start_column=sc, end_row=oe, end_column=ec)
 
                     # Установить стилизованное выделение для границ дня
-                    ws.cell(column=col, row=de).border = Border(left   = ws.cell(column=col, row=de).border.left,
-                                                                right  = ws.cell(column=col, row=de).border.right,
-                                                                top    = ws.cell(column=col, row=de).border.top,
-                                                                bottom = Side(border_style='thick'))
+                    ws.cell(column=col, row=de).border = Border(left=ws.cell(column=col, row=de).border.left,
+                                                                right=ws.cell(column=col, row=de).border.right,
+                                                                top=ws.cell(column=col, row=de).border.top,
+                                                                bottom=Side(border_style='thick'))
 
                     # Объединить день, но только когда обход уже на последнем столбце (иначе ненужное выделение)
                     if col == ws.max_column:
@@ -489,7 +489,7 @@ def visual(wb:  'Частично форматированная книга'
         # Корректировка ширины столбцов
         for column in ws.columns:
             max_len = max(max((len(r) for r in re.split(r'\n', str(cell.value)))) for cell in column)
-            max_len = (lambda m: m*2 if m<10 else m*1.5 if m<20 else m*1.45)(max_len)
+            max_len = (lambda m: m*2 if m < 10 else m*1.5 if m < 20 else m*1.45)(max_len)
             ws.column_dimensions[column[0].column_letter].width = max_len+1
 
         # Корректировка высоты строк
@@ -509,18 +509,18 @@ def create_resp(df:   'База парсинга',
                 grp3: 'Выбранная подгруппа (где три подгруппы)' = '0',
                 i_yn: 'Сокращать запись предметов? (Аббревиатуры)' = False,
                 t_yn: 'Сокращать запись преподов? (Без должности)' = False,
-                p_yn: 'Полная запись подгрупп? (С п/гр)' = True,
-                c_yn: 'Сокрашать запись кабинетов? (Без корпуса)' = False,
-                ) ->  'Отформатированная книга расписания':
+                p_yn: 'Сокращать запись подгрупп? (Без п/гр)' = False,
+                c_yn: 'Сокращать запись кабинетов? (Без корпуса)' = False,
+                ) -> 'Отформатированная книга расписания':
 
     """ Функция создания форматированного расписания из БД парсинга """
 
     """ Модификация базы данных """
     # Замена всех порченных типов пары на аналоги
-    df = crs.replace_type(df, crs.find_bad_type(df))
+    df = cra.replace_type(df, cra.find_bad_type(df))
 
     # Выборка базы данных для групп
-    df = crs.take_data(df, grp2, grp3).dropna(subset=['date_pair'])
+    df = cra.take_data(df, grp2, grp3).dropna(subset=['date_pair'])
 
     # Выделение учебных недель
     times = time_resp(df)
@@ -528,19 +528,19 @@ def create_resp(df:   'База парсинга',
     """ Форматирование базы данных """
     # Предметы
     if i_yn:
-        df['item_name'] = df['item_name'].apply(lambda item_name: crs.format_item_name(item_name))
-        
+        df['item_name'] = df['item_name'].apply(lambda item_name: cra.format_item_name(item_name))
+
     # Преподы
     if t_yn:
-        df['teacher'] = df['teacher'].apply(lambda teacher: crs.format_teacher(teacher))
-    
+        df['teacher'] = df['teacher'].apply(lambda teacher: cra.format_teacher(teacher))
+
     # Подгруппы
-    if p_yn:
-        df['pdgr'] = df['pdgr'].apply(lambda pdgr: crs.format_pdgr(pdgr))
+    if not p_yn:
+        df['pdgr'] = df['pdgr'].apply(lambda pdgr: cra.format_pdgr(pdgr))
 
     # Кабинеты
     if c_yn:
-        df['cab'] = df['cab'].apply(lambda cab: crs.format_cab(cab))
+        df['cab'] = df['cab'].apply(lambda cab: cra.format_cab(cab))
 
     """ Работа с EXCEL """
     # Создание новой таблицы
@@ -561,7 +561,7 @@ def create_resp(df:   'База парсинга',
 
 def save_resp(book: 'Сохраняемая книга',
               path: 'Путь для сохранения'
-              ) ->   None:
+              ) -> None:
 
     """ Функция сохраненения книги расписания в файл """
 

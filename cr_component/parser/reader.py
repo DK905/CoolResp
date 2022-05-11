@@ -6,8 +6,9 @@ r"""Взаимодействие с исходным Excel-документом.
 """
 
 import CoolRespProject.modules_api.api_defaults as api_def
+import CoolRespProject.modules_parser.cr_additional as cra
 import CoolRespProject.modules_parser.cr_defaults as crd
-import CoolRespProject.modules_parser.cr_swiss as crs
+import CoolRespProject.modules_parser.cr_exceptions as cre
 import pandas as pd
 import numpy as np
 import xlrd
@@ -16,15 +17,15 @@ import re
 
 def read_book(file: 'Путь к загружаемому файлу',
               ext:  'Расширение документа' = ''
-              ) ->  'Объект книги в формате типизированного словаря':
+              ) -> 'Объект книги в формате типизированного словаря':
 
     """ Функция для считывания Excel-документа (xls, xlsx) в объект xlrd-книги """
 
     # Если расширение не указано, попытаться определить его
     if not ext:
-        ext = crs.check_file_extension(file)
+        ext = cra.check_file_extension(file)
         if ext == api_def.EXTENSIONS['404']:
-            return crd.READING_BOOK
+            raise cre.FileNotExcel()
 
     # Если старый формат EXCEL 97-2003
     if ext == 'xls':
@@ -35,31 +36,39 @@ def read_book(file: 'Путь к загружаемому файлу',
         # То есть, флаг formatting_info уже не используется
         reading_book = xlrd.open_workbook(file)
     else:
-        reading_book = crd.READING_BOOK
+        raise cre.FileNotExcel()
 
     return reading_book
 
 
 def see_sheets(book: 'Загруженный объект книги'
-               ) ->  'Список листов книги (для меню выбора листов)':
+               ) -> 'Список листов книги (для меню выбора листов)':
 
     """ Функция для отображения листов в книге """
     
     # Вернуть список листов
-    return book.sheet_names()
+    sheets = book.sheet_names()
+    if sheets:
+        return sheets
+
+    raise cre.CantFoundSheets()
 
 
 def take_sheet(book: 'Загруженный объект книги',
                name: 'Имя нужного листа'
-               ) ->  'Объект выбранного листа':
+               ) -> 'Объект выбранного листа':
 
     """ Функция получения листа из объекта книги """
 
-    return book.sheet_by_name(name)
+    sheet_name = book.sheet_by_name(name)
+    if sheet_name:
+        return sheet_name
+
+    raise cre.CantGetSheet()
 
 
 def group_choice(sheet: 'Объект листа с загруженной книги'
-                 ) ->   'Словарь {Список групп на листе, индексный диапазон расписания}':
+                 ) -> 'Словарь {Список групп на листе, индексный диапазон расписания}':
 
     """ Функция для выделения описательной информации о группах и границах на листе """
     period = year = grp_list = ind_start = ind_end = None
@@ -77,8 +86,8 @@ def group_choice(sheet: 'Объект листа с загруженной кн�
                     if not period and re.search(r'[Нн]а\s*период', col):
                         # Выделение периода расписания. Если он указан неправильно, потом будет ложная коррекция парсера
                         period = re.findall(r'с\s*([\d.]+)[г.]*\s*по\s*([\d.]+)[г.]*',
-                                                 col,
-                                                 re.IGNORECASE)[0]
+                                            col,
+                                            re.IGNORECASE)[0]
                         # Период приводится к самому частому формату даты по типу "04.03.21"
                         period = ['.'.join([part[-2:] for part in date.split('.')]) for date in period]
                         # Выделение года
@@ -96,7 +105,7 @@ def group_choice(sheet: 'Объект листа с загруженной кн�
         if not grp_list and re.search(r'^[Дд]ни', row[0], re.MULTILINE):
             grp_list = [el for el in row if el]  # Отсеивание совсем пустых столбцов
             grp_list = [grp_list[i] for i in range(2, len(grp_list), 2)]  # Группы в строке идут с двойным шагом ячейки
-            grp_list = [crs.string_float_to_string_int(group) for group in grp_list]
+            grp_list = [cra.string_float_to_string_int(group) for group in grp_list]
             ind_start = ind_row  # Начало диапазона расписания - строка групп
             continue  # Если нашли начало, то рано проверять конец
 
@@ -106,10 +115,9 @@ def group_choice(sheet: 'Объект листа с загруженной кн�
     # Если на листе обнаружены "список групп", "период расписания" и "диапазон строк расписания", скомпановать их
     if period and grp_list and ind_start and ind_end:
         group_information = [period, year, grp_list, (ind_start + 1, ind_end)]
-    else:
-        group_information = crd.GROUP_INFORMATION
-    # Обнаруженная информация возвращается в качестве словаря
-    return dict(zip(['period', 'year', 'groups_info', 'range'], group_information))
+        return dict(zip(['period', 'year', 'groups_info', 'range'], group_information))
+
+    raise cre.CantFoundPositionInfo()
 
 
 """                 Начальная стадия разбора расписания
@@ -159,11 +167,11 @@ def take_value(row: 'Координата строки',
 
 def what_col(title: 'Шапка подтаблицы расписания',
              group: 'Выбранная группа'
-             ) ->   'Индекс столбца группы':
+             ) -> 'Индекс столбца группы':
 
     """ Функция определения столбца группы """
     for ind, rec in enumerate(title):
-        if crs.string_float_to_string_int(rec) == crs.string_float_to_string_int(group):
+        if cra.string_float_to_string_int(rec) == cra.string_float_to_string_int(group):
             return ind
 
     return None
@@ -172,7 +180,7 @@ def what_col(title: 'Шапка подтаблицы расписания',
 def prepare(sheet: 'Выбранный лист',
             group: 'Выбранная группа',
             coord: 'Диапазон информации о расписании'
-            ) ->   'Датафрейм предварительных данных':
+            ) -> 'Датафрейм предварительных данных':
 
     """ Функция для подготовки расписания выбранной группы к парсингу """
 

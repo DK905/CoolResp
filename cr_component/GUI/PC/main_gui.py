@@ -4,6 +4,7 @@
 
 """
 
+
 # Функция возврата абсолютного пути (нужна для подгрузки ресурсов в компилируемую версию)
 def resource_path(relative):
     import sys
@@ -12,6 +13,7 @@ def resource_path(relative):
         return os_path.join(sys._MEIPASS, relative)
     else:
         return os_path.join(os_path.abspath('.'), relative)
+
 
 """ Модули макета """
 from PyQt5.QtWidgets import QAction, QCheckBox, QComboBox, QDialog, QFrame, QGroupBox, QHBoxLayout, QLabel

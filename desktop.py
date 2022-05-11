@@ -7,14 +7,9 @@
 """
 
 # # # Подключение модулей для работы парсера
-# Парсинг базы разбора в нормальную БД для каждой логической записи
+from CoolRespProject.modules_parser import cr_additional as cra
 from CoolRespProject.modules_parser import cr_parser as crp
-# Импорт умолчаний API
-# Считывание таблицы в базу разбора для конкретной группы
 from CoolRespProject.modules_parser import cr_reader as crr
-# Швейцарский нож для дополнительной обработки
-from CoolRespProject.modules_parser import cr_swiss as crs
-# Форматная запись БД в таблицу EXCEL
 from CoolRespProject.modules_parser import cr_writter as crw
 
 # # # Подключение модулей для работы GUI
@@ -156,7 +151,7 @@ class CoolRespWindow(QMainWindow):
 
     # Диалоговое окно сохранения
     def save_file(self, book):
-        name = f'{crs.create_name(book)}.xlsx'
+        name = f'{cra.create_name(book)}.xlsx'
         path = QFileDialog.getSaveFileName(self,
                                            'Сохранить файл',  # Название диалогового окна
                                            name,  # Имя файла по умолчанию
