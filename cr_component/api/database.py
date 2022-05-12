@@ -11,7 +11,7 @@ import pytz
 
 # # # Импорт модулей для работы сервера
 from flask_sqlalchemy import SQLAlchemy
-from CoolRespProject.modules_api import api_defaults as api_def
+from cr_component.api import defaults as api_def
 
 
 # Объявление экземпляра класса для взаимодействия с базой данных
@@ -24,6 +24,9 @@ def now_in_prefer_timezone():
     return datetime.now(pytz.timezone(api_def.TIMEZONE))
 
 
+""" Таблица исходных файлов """
+
+
 class FileInfo(db.Model):
     """ Класс-таблица для хранения данных о файлах на сервере """
 
@@ -32,13 +35,78 @@ class FileInfo(db.Model):
     # Столбец для хранения хеша файла. Первичный (хеши разных файлов не повторяются*), строка на 64 символа
     # *совпадение хешей крайне маловероятно, но возможно
     hash = db.Column(db.String(64), primary_key=True)
+    # Столбец для хранения первоначального названия файла (для удобства)
+    name = db.Column(db.Text(), nullable=False)
     # Столбец для хранения расширения файла. Обязательный, строка на 4 символа
     extension = db.Column(db.String(4), nullable=False)
+    # Столбец для хранения даты загрузки файла
+    uploaded_at = db.Column(db.DateTime(timezone=True),
+                            default=now_in_prefer_timezone(),
+                            nullable=False)
     # Столбец для хранения даты последнего взаимодействия с файлом. Обязательный, дата в выбранном часовом поясе
     modified_at = db.Column(db.DateTime(timezone=True),
                             default=now_in_prefer_timezone(),
                             onupdate=now_in_prefer_timezone(),
                             nullable=False)
+
+
+def get_info_from_files(file_hash, as_dict=True):
+    """ Функция получения из БД информации об исходном файле """
+
+    # Запрос к таблице исходных файлов. Результат - запись с hash=file_hash
+    query_result = FileInfo.query.get(file_hash)
+    # Если в БД был нужный хеш, и результат нужно представить в формате словаря
+    if query_result and as_dict:
+        # Выделить из объекта запроса нужные данные в словарь
+        return {
+            'hash': query_result.hash,
+            'name': query_result.name,
+            'extension': query_result.extension,
+            'uploaded_at': query_result.uploaded_at,
+            'modified_at': query_result.modified_at,
+        }
+    else:
+        # Вернуть объект запроса (может быть None, что нужно для условной обработки)
+        return query_result
+
+
+def add_info_to_files(file_hash, file_name, file_extension):
+    """ Функция добавления информации о загруженном файле в БД таблицу хешей исходных файлов """
+
+    # Информация вносится только в случае отсутствия хеша в БД
+    if not get_info_from_files(file_hash):
+        file_info = FileInfo(hash=file_hash,
+                             name=file_name,
+                             extension=file_extension)
+        db.session.add(file_info)
+        db.session.commit()
+
+
+def update_time_in_files(file_hash):
+    """ Функция обновления времени последнего взаимодействия с исходным файлом """
+
+    # Получить из БД информацию о хеше исходного файла в формате объекта записи
+    file_info = get_info_from_files(file_hash, as_dict=False)
+    if file_info:
+        # Если в БД содержится запрашиваемый хеш, обновить время взаимодействия
+        file_info.modified_at = now_in_prefer_timezone()
+        db.session.add(file_info)
+        db.session.commit()
+
+
+def delete_info_from_files(file_hash):
+    """ Функция удаления информации об исходном файле из БД таблицы хешей исходных файлов """
+
+    # Получить из БД информацию о хеше, но в формате объекта записи
+    file_info = get_info_from_files(file_hash, as_dict=False)
+    if file_info:
+        # Если в БД содержится запрашиваемый хеш, удалить его запись
+        db.session.delete(file_info)
+        db.session.commit()
+        delete_info_from_json(file_hash)
+
+
+""" Таблица JSON-результатов """
 
 
 class JSONInfo(db.Model):
@@ -55,24 +123,6 @@ class JSONInfo(db.Model):
     sheet = db.Column(db.String(40), nullable=False)
     # Столбец для хранения названия группы, для которой парсилось расписание
     group = db.Column(db.String(40), nullable=False)
-
-
-def get_info_from_files(file_hash, as_dict=True):
-    """ Функция получения из БД информации об исходном файле """
-
-    # Запрос к таблице исходных файлов. Результат - запись с hash=file_hash
-    query_result = FileInfo.query.get(file_hash)
-    # Если в БД был нужный хеш, и результат нужно представить в формате словаря
-    if query_result and as_dict:
-        # Выделить из объекта запроса нужные данные в словарь
-        return {
-            'hash': query_result.hash,
-            'extension': query_result.extension,
-            'modified_at': query_result.modified_at,
-        }
-    else:
-        # Вернуть объект запроса (может быть None, что нужно для условной обработки)
-        return query_result
 
 
 def get_info_from_json(json_hash):
@@ -104,17 +154,6 @@ def get_info_from_json_on_file(json_hash='', file_hash='', sheet='', group=''):
     return result
 
 
-def add_info_to_files(file_hash, file_extension):
-    """ Функция добавления информации о загруженном файле в БД таблицу хешей исходных файлов """
-
-    # Информация вносится только в случае отсутствия хеша в БД
-    if not get_info_from_files(file_hash):
-        file_info = FileInfo(hash=file_hash,
-                             extension=file_extension)
-        db.session.add(file_info)
-        db.session.commit()
-
-
 def add_info_to_json(json_hash, root_hash, sheet, group):
     """ Функция добавления в БД информации о JSON-результате парсинга """
 
@@ -126,30 +165,6 @@ def add_info_to_json(json_hash, root_hash, sheet, group):
                              group=group)
         db.session.add(json_info)
         db.session.commit()
-
-
-def update_time_in_files(file_hash):
-    """ Функция обновления времени последнего взаимодействия с исходным файлом """
-
-    # Получить из БД информацию о хеше исходного файла в формате объекта записи
-    file_info = get_info_from_files(file_hash, as_dict=False)
-    if file_info:
-        # Если в БД содержится запрашиваемый хеш, обновить время взаимодействия
-        file_info.modified_at = now_in_prefer_timezone()
-        db.session.add(file_info)
-        db.session.commit()
-
-
-def delete_info_from_files(file_hash):
-    """ Функция удаления информации об исходном файле из БД таблицы хешей исходных файлов """
-
-    # Получить из БД информацию о хеше, но в формате объекта записи
-    file_info = get_info_from_files(file_hash, as_dict=False)
-    if file_info:
-        # Если в БД содержится запрашиваемый хеш, удалить его запись
-        db.session.delete(file_info)
-        db.session.commit()
-        delete_info_from_json(file_hash)
 
 
 def delete_info_from_json(file_hash, is_file=True):
@@ -191,7 +206,7 @@ if __name__ == '__main__':
     delete_info_from_files(test_hash)
     print(get_info_from_files(test_hash))
 
-    add_info_to_files(test_hash, 'xlsx')
+    add_info_to_files(test_hash, test_hash, 'xlsx')
     print(get_info_from_files(test_hash))
 
     update_time_in_files(test_hash)

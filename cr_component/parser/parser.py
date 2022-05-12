@@ -2,8 +2,8 @@ r"""Парсинг датафрейма с ячейками расписания
 
 """
 
-import CoolRespProject.modules_parser.cr_additional as cra
-import CoolRespProject.modules_parser.cr_defaults as crd
+import cr_component.parser.additional as cr_add
+import cr_component.parser.defaults as cr_def
 from datetime import date as dt_date, timedelta
 import pandas as pd
 import numpy as np
@@ -40,7 +40,7 @@ def format_tip(tip: 'Подстрока форматируемого типа п
     f_pat = r'(.*?6.*D.*)|(.*?7.*Z.*)|((?:.*?т.*р.*я.*)|(?:.*?л.*к.*я.*))|(.*?а.*б.*)|(.*?п.*а.*к.*)'
     for i, eq in enumerate(re.findall(f_pat, tip)[0]):
         if eq:
-            return crd.TIP_LIST[i]
+            return cr_def.TIP_LIST[i]
 
 
 def format_group(group: 'Подстрока форматируемой подгруппы'
@@ -161,11 +161,11 @@ def parser(stuff: 'База обработки',
     pattern5 = r'(?m).*(?:[А-ЯЁA-Z][А-ЯЁA-Zа-яёa-z, -]{2,}?[А-ЯЁA-Zа-яёa-z( )]+?)(?=(?: с \d)|[:;\n\d]|$).*?(?=(?:\d\s*[п]?\s*/\s*гр)|(?:[а-яёa-z]{2,}[а-яёa-z. \d]+\s{1,}[А-ЯЁA-Z][а-яёa-z ]+(?:[А-ЯЁA-Z][.]?){2}))'
 
     # Стандартизация форматного умолчания препода
-    crd.DEF_TEACHER = format_prep(crd.DEF_TEACHER)
+    cr_def.DEF_TEACHER = format_prep(cr_def.DEF_TEACHER)
 
     """ Обработка начальной БД """
     # Датафрейм базы парсинга
-    parse = pd.DataFrame(columns=crd.DEF_COLUMNS)
+    parse = pd.DataFrame(columns=cr_def.DEF_COLUMNS)
 
     day_num = set()  # Множество для определения пройденных дней
 
@@ -259,7 +259,7 @@ def parser(stuff: 'База обработки',
                         if unint:
                             # Если не хватает подгруппы, а актуал не подгруппа, то это уже следующий набор
                             if i != 2 and dtg[-1][0] and dtg[-1][1] and not dtg[-1][2]:
-                                dtg[-1][2].append(crd.DEF_GROUPS)
+                                dtg[-1][2].append(cr_def.DEF_GROUPS)
                             # Если фулсет и не комбо, или следующий набор
                             if not dtg[-1].count([]) and i != pred or dtg[-1][1] and i == 1:
                                 # То перейти к следующему элементу
@@ -271,7 +271,7 @@ def parser(stuff: 'База обработки',
 
                 """ Проверка последней записи """
                 if not dtg[-1][2]:                  # Если нет подгруппы
-                    dtg[-1][2].append(crd.DEF_GROUPS)  # Значение по умолчанию
+                    dtg[-1][2].append(cr_def.DEF_GROUPS)  # Значение по умолчанию
 
                 """ Исправление возможных ошибок в изначальном расписании """
                 # Длина списка может меняться, из-за чего приходится использовать while
@@ -311,7 +311,7 @@ def parser(stuff: 'База обработки',
                     # Если типа пары нет
                     else:
                         # Взять значение по умолчанию
-                        dtg[i][1].append(crd.DEF_TYPE_PAIR)
+                        dtg[i][1].append(cr_def.DEF_TYPE_PAIR)
 
                     """ Проверка на завершение цикла коррекции """
                     # Если все записи были обработаны, исправление ошибок завершается
@@ -333,14 +333,14 @@ def parser(stuff: 'База обработки',
                     # Если тип пары не был определён
                     if not dtg[f][1]:
                         # Использовать тип пары по умолчанию
-                        dtg[f][1].append(crd.DEF_TYPE_PAIR)
+                        dtg[f][1].append(cr_def.DEF_TYPE_PAIR)
                     # Если тип пары есть и это не значение по умолчанию
-                    elif dtg[f][1][0] != crd.DEF_TYPE_PAIR:
+                    elif dtg[f][1][0] != cr_def.DEF_TYPE_PAIR:
                         # Отформатировать его
                         dtg[f][1] = [format_tip(dtg[f][1][0])]
 
                     # Если подгруппа не значение по умолчанию
-                    if dtg[f][2][0] != crd.DEF_GROUPS:
+                    if dtg[f][2][0] != cr_def.DEF_GROUPS:
                         # Отформатировать её
                         dtg[f][2] = [format_group(dtg[f][2][0])]
 
@@ -358,18 +358,18 @@ def parser(stuff: 'База обработки',
                         lecturer = [format_prep(parse.iloc[-1]['teacher'])]
                     # Пара особая = мероприятие, час куратора и т.п = стандартный препод
                     else:
-                        lecturer = [crd.DEF_TEACHER]
+                        lecturer = [cr_def.DEF_TEACHER]
 
                 """ Для каждого набора "тип пары - подгруппа - даты" создать запись в БД """
                 for info in dtg:
                     # Финальная корректировка типа
-                    if len(parse) and info[1][0] == crd.DEF_TYPE_PAIR:
+                    if len(parse) and info[1][0] == cr_def.DEF_TYPE_PAIR:
                         # Если предмет как предыдущий, а тип базовый, то ошибка в типе
                         if parse.iloc[-1]['item_name'] == edu_pair:
                             info[1] = [parse.iloc[-1]['type']]
                         # Если тип базовый, но есть подгруппы - сменить на базовый №2
-                        elif info[2][0] != crd.DEF_GROUPS:
-                            info[1][0] = crd.DEF_TYPE_GRPS
+                        elif info[2][0] != cr_def.DEF_GROUPS:
+                            info[1][0] = cr_def.DEF_TYPE_GRPS
 
                     """ Занесение в базу """
                     # Кабинеты добавляются отдельно, так как с ними много проблем
@@ -401,7 +401,7 @@ def parser(stuff: 'База обработки',
             # Исправление ['210', '212 УК№1', '329', '331 УК№5', '410 УК№1'] в полных записях
             for ind_cb in range(len(cabs)-1, -1, -1):
                 # Если кабинет уже заменён базовым значением из констант, то его форматировать нельзя
-                if cabs[ind_cb] == crd.DEF_CABS or cabs[ind_cb] == crd.DEF_SPORT_CAB:
+                if cabs[ind_cb] == cr_def.DEF_CABS or cabs[ind_cb] == cr_def.DEF_SPORT_CAB:
                     continue
                 # Если для кабинета не указан корпус
                 if (ind_cb + 1 < len(cabs) and
@@ -414,7 +414,7 @@ def parser(stuff: 'База обработки',
 
         # Если кабинетов нет
         else:
-            cabs = [crd.DEF_CABS]
+            cabs = [cr_def.DEF_CABS]
         
         it_cb = iter(cabs)    # Итератор кабинетов
 
@@ -436,9 +436,9 @@ def parser(stuff: 'База обработки',
             # Если ячейке сопряжён только один кабинет (или в ней лишь одна запись)
             if len(cabs) == 1 or start+1 == parse.shape[0]:
                 # Если препод по умолчанию, а записей несколько
-                if parse.loc[ind]['teacher'] == crd.DEF_TEACHER and n_rec > 1:
+                if parse.loc[ind]['teacher'] == cr_def.DEF_TEACHER and n_rec > 1:
                     # Поставить кабинет по умолчанию
-                    parse.loc[ind, 'cab'] = crd.DEF_CABS
+                    parse.loc[ind, 'cab'] = cr_def.DEF_CABS
                 # Если запись одна
                 else:                        
                     # Поставить первый кабинет из списка кабинетов ячейки
@@ -447,8 +447,8 @@ def parser(stuff: 'База обработки',
                 # Если ФЗК для нескольких групп, то могут быть косяки
                 if (ind and
                         parse.loc[ind-1][:3].eq(parse.loc[ind][:3]).min() and
-                        parse.loc[ind-1]['cab'] == crd.DEF_SPORT_CAB):
-                    parse.loc[ind, 'cab'] = crd.DEF_SPORT_CAB
+                        parse.loc[ind-1]['cab'] == cr_def.DEF_SPORT_CAB):
+                    parse.loc[ind, 'cab'] = cr_def.DEF_SPORT_CAB
                     continue
                 # Если число записей совпадает с числом кабинетов
                 if n_rec == len(cabs):
@@ -478,11 +478,11 @@ def parser(stuff: 'База обработки',
                         if (ind == start or
                             # 1) Сменился препод и не переход с лекцию на лекцию PAIR_TYPES.values
                             (parse.loc[ind-1]['teacher'] != parse.loc[ind]['teacher'] and
-                             not (parse.loc[ind-1]['type'] == parse.loc[ind]['type'] == crd.TIP_LIST[2])) or
+                             not (parse.loc[ind-1]['type'] == parse.loc[ind]['type'] == cr_def.TIP_LIST[2])) or
                             # 2) Препод не сменился и переход с/на лекцию
                             (parse.loc[ind-1]['teacher'] == parse.loc[ind]['teacher'] and
-                             (parse.loc[ind-1]['type'] == crd.TIP_LIST[2] or
-                              parse.loc[ind]['type'] == crd.TIP_LIST[2]))):
+                             (parse.loc[ind-1]['type'] == cr_def.TIP_LIST[2] or
+                              parse.loc[ind]['type'] == cr_def.TIP_LIST[2]))):
                             """ Итерация """
                             try:
                                 parse.loc[ind, 'cab'] = next(it_cb)
@@ -492,13 +492,13 @@ def parser(stuff: 'База обработки',
                             parse.loc[ind, 'cab'] = parse.loc[ind-1]['cab']
 
     # Применение технической стандартизации к датафрейму
-    parse = cra.use_standard(parse)
+    parse = cr_add.use_standard(parse)
 
     # Имя берётся из предыдущей стадии эволюции БД
     try:
         parse.name = stuff.name
     except:
-        parse.name = crd.DEF_NAME
+        parse.name = cr_def.DEF_NAME
 
     # Если с парсингом всё было норм, вернуть базу запарсенного расписания
     return parse

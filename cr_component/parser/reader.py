@@ -5,10 +5,10 @@ r"""Взаимодействие с исходным Excel-документом.
 
 """
 
-import CoolRespProject.modules_api.api_defaults as api_def
-import CoolRespProject.modules_parser.cr_additional as cra
-import CoolRespProject.modules_parser.cr_defaults as crd
-import CoolRespProject.modules_parser.cr_exceptions as cre
+import cr_component.api.defaults as api_def
+import cr_component.parser.additional as cr_add
+import cr_component.parser.defaults as cr_def
+import cr_component.parser.exceptions as cr_err
 import pandas as pd
 import numpy as np
 import xlrd
@@ -23,9 +23,9 @@ def read_book(file: 'Путь к загружаемому файлу',
 
     # Если расширение не указано, попытаться определить его
     if not ext:
-        ext = cra.check_file_extension(file)
+        ext = cr_add.check_file_extension(file)
         if ext == api_def.EXTENSIONS['404']:
-            raise cre.FileNotExcel()
+            raise cr_err.FileNotExcel()
 
     # Если старый формат EXCEL 97-2003
     if ext == 'xls':
@@ -36,7 +36,7 @@ def read_book(file: 'Путь к загружаемому файлу',
         # То есть, флаг formatting_info уже не используется
         reading_book = xlrd.open_workbook(file)
     else:
-        raise cre.FileNotExcel()
+        raise cr_err.FileNotExcel()
 
     return reading_book
 
@@ -51,7 +51,7 @@ def see_sheets(book: 'Загруженный объект книги'
     if sheets:
         return sheets
 
-    raise cre.CantFoundSheets()
+    raise cr_err.CantFoundSheets()
 
 
 def take_sheet(book: 'Загруженный объект книги',
@@ -64,7 +64,7 @@ def take_sheet(book: 'Загруженный объект книги',
     if sheet_name:
         return sheet_name
 
-    raise cre.CantGetSheet()
+    raise cr_err.CantGetSheet()
 
 
 def group_choice(sheet: 'Объект листа с загруженной книги'
@@ -105,7 +105,7 @@ def group_choice(sheet: 'Объект листа с загруженной кн�
         if not grp_list and re.search(r'^[Дд]ни', row[0], re.MULTILINE):
             grp_list = [el for el in row if el]  # Отсеивание совсем пустых столбцов
             grp_list = [grp_list[i] for i in range(2, len(grp_list), 2)]  # Группы в строке идут с двойным шагом ячейки
-            grp_list = [cra.string_float_to_string_int(group) for group in grp_list]
+            grp_list = [cr_add.string_float_to_string_int(group) for group in grp_list]
             ind_start = ind_row  # Начало диапазона расписания - строка групп
             continue  # Если нашли начало, то рано проверять конец
 
@@ -117,7 +117,7 @@ def group_choice(sheet: 'Объект листа с загруженной кн�
         group_information = [period, year, grp_list, (ind_start + 1, ind_end)]
         return dict(zip(['period', 'year', 'groups_info', 'range'], group_information))
 
-    raise cre.CantFoundPositionInfo()
+    raise cr_err.CantFoundPositionInfo()
 
 
 """                 Начальная стадия разбора расписания
@@ -171,7 +171,7 @@ def what_col(title: 'Шапка подтаблицы расписания',
 
     """ Функция определения столбца группы """
     for ind, rec in enumerate(title):
-        if cra.string_float_to_string_int(rec) == cra.string_float_to_string_int(group):
+        if cr_add.string_float_to_string_int(rec) == cr_add.string_float_to_string_int(group):
             return ind
 
     return None
@@ -236,7 +236,7 @@ def prepare(sheet: 'Выбранный лист',
 
     """ Дни недели """
     # Сократить дни недели
-    df_prep['day'].replace(crd.DAYS_REGEX, regex=True, inplace=True)
+    df_prep['day'].replace(cr_def.DAYS_REGEX, regex=True, inplace=True)
 
     # Привести столбец номеров пар к типу категориальных данных (оптимизация)
     df_prep['day'] = df_prep['day'].astype('category')
@@ -251,16 +251,16 @@ def prepare(sheet: 'Выбранный лист',
     df_prep['rec'].replace(r'\s+', ' ', regex=True, inplace=True)
 
     # Заменить диф.зачёты и зачёты на кодовую последовательность (стабилизация парсинга)
-    df_prep['rec'].replace(crd.EXAM_TYPES, regex=True, inplace=True)
+    df_prep['rec'].replace(cr_def.EXAM_TYPES, regex=True, inplace=True)
 
     """ Кабинеты """
     # Заменить различные сокращения актового зала на обобщённое значение
-    df_prep['cabs'] = df_prep['cabs'].map(lambda val: re.sub(r'[аА].*?[лЛ]', crd.DEF_EVENT_CAB, str(val)) if val else val)
+    df_prep['cabs'] = df_prep['cabs'].map(lambda val: re.sub(r'[аА].*?[лЛ]', cr_def.DEF_EVENT_CAB, str(val)) if val else val)
 
     # Регулярное выражение для физкультурного зала
     pat_zal = re.compile(r'(?:с\s*?/\s*?з.*?т\s*?/\s*?з)|(?:1[\d]{2}\s*?[уУ][кК]\s*?№\s*?1[,;: ].*т\s*?/\s*?з)|(?:1[\d]{2}\s*?[уУ][кК]\s*?№\s*?1)')
     # Заменить различные сокращения физкультурного зала на обобщённое значение
-    df_prep['cabs'] = df_prep['cabs'].map(lambda val: re.sub(pat_zal, crd.DEF_SPORT_CAB, str(val)) if val else val)
+    df_prep['cabs'] = df_prep['cabs'].map(lambda val: re.sub(pat_zal, cr_def.DEF_SPORT_CAB, str(val)) if val else val)
 
     # Убрать всю информацию о необходимости сменной обуви
     df_prep['cabs'] = df_prep['cabs'].map(lambda val: re.sub(r'с[м]?.+?об', '', str(val)) if val else val)

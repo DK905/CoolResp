@@ -2,8 +2,8 @@ r"""Сохранение БД расписания группы в Excel-док�
 
 """
 
-import CoolRespProject.modules_parser.cr_additional as cra
-import CoolRespProject.modules_parser.cr_defaults as crd
+import cr_component.parser.additional as cr_add
+import cr_component.parser.defaults as cr_def
 import pandas as pd
 import re
 from openpyxl import Workbook
@@ -79,7 +79,7 @@ def time_resp(df:  'БД расписания'
     work_weeks = pd.DataFrame({'monday': date_monday, 'saturday': date_saturday})
 
     # Функция форматной записи учебной недели
-    date_format = lambda date_inf: f"{date_inf.strftime('%d')} {crd.MONTHS.loc[date_inf.month, 'abbr_name']}"
+    date_format = lambda date_inf: f"{date_inf.strftime('%d')} {cr_def.MONTHS.loc[date_inf.month, 'abbr_name']}"
 
     # Отдельный столбец с форматной записью периода
     work_weeks['diap_string'] = work_weeks.apply(lambda row: ' - '.join([date_format(row['monday']),
@@ -116,12 +116,12 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
              (int(week['monday'].day) in range(1, 7) or
               int(week['saturday'].day) in range(1, 7)) and
              # И месяца ещё не было в списке листов
-             crd.MONTHS.loc[week['monday'].month, 'full_name'] not in wb.sheetnames)):
+             cr_def.MONTHS.loc[week['monday'].month, 'full_name'] not in wb.sheetnames)):
 
             # Если в месяце была одна неделя (при смене месяца), то нужно просто объединить месяцы
             if not wb.sheetnames[0] == 'Sheet' and ws.max_column < 5:
                 # Переименовать текущий месяц
-                ws.title = crd.MONTHS.loc[week['monday'].month, 'full_name']
+                ws.title = cr_def.MONTHS.loc[week['monday'].month, 'full_name']
 
             # Если в следующем месяце будет всего одна неделя (на случай чумы или сессии), то ничего не менять
             elif (  # Если не выполняется групповое условие, где текущая запись - последняя
@@ -136,11 +136,11 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
                     # Переключиться на актуальный лист таблицы
                     ws = wb.active
                     # Переименовать актуальный лист
-                    ws.title = crd.MONTHS.loc[week['monday'].month, 'full_name']
+                    ws.title = cr_def.MONTHS.loc[week['monday'].month, 'full_name']
                 # Если обычный новый учебный месяц, то создать новый лист
                 else:
                     # Создать лист
-                    wb.create_sheet(crd.MONTHS.loc[week['monday'].month, 'full_name'])
+                    wb.create_sheet(cr_def.MONTHS.loc[week['monday'].month, 'full_name'])
 
                 # Сделать актуальным листом последний лист
                 ws = wb.worksheets[-1]
@@ -208,18 +208,18 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
     # Формирование списка датафреймов уникальных наборов (для итерации по группам записей)
     dft = [rec.reset_index() for ind, rec in dft]
 
-    days = iter(crd.DAYS_NAMES)  # Итератор по дням
-    day = crd.DAYS_NAMES[0]      # Переход на первый день
+    days = iter(cr_def.DAYS_NAMES)  # Итератор по дням
+    day = cr_def.DAYS_NAMES[0]      # Переход на первый день
     act_row = 1                  # Индекс актуальной строки на листе
     act_grp = 0                  # Индекс актуальной группы записей
 
     # Итерация по номерам пары для всех заданных дней
-    for num in range(crd.TIMETABLE.shape[0] * len(crd.DAYS_NAMES)):
+    for num in range(cr_def.TIMETABLE.shape[0] * len(cr_def.DAYS_NAMES)):
         # Актуальный номер пары в привычной записи
-        act_num = num % crd.TIMETABLE.shape[0]
+        act_num = num % cr_def.TIMETABLE.shape[0]
 
         # Новый день наступает после каждой итерации из семи пар (максимальное количество пар в день)
-        if act_num < (num-1) % crd.TIMETABLE.shape[0]:
+        if act_num < (num-1) % cr_def.TIMETABLE.shape[0]:
             day = next(days)
 
         # Итерироваться, если для текущего дня пар больше нет
@@ -239,12 +239,12 @@ def fill_base(wb: 'Объект книги EXCEL из openpyxl',
             _ = ws.cell(column=2, row=act_row, value=act_num + 1).style = ST_INFO
 
             # Время пары выбирается различно для выходных и рабочих дней
-            if day != crd.DAYS_NAMES[5]:
+            if day != cr_def.DAYS_NAMES[5]:
                 # Если будни
-                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekdays']).style = ST_INFO
+                _ = ws.cell(column=3, row=act_row, value=cr_def.TIMETABLE.loc[act_num + 1, 'weekdays']).style = ST_INFO
             else:
                 # Если суббота
-                _ = ws.cell(column=3, row=act_row, value=crd.TIMETABLE.loc[act_num+1, 'weekends']).style = ST_INFO
+                _ = ws.cell(column=3, row=act_row, value=cr_def.TIMETABLE.loc[act_num + 1, 'weekends']).style = ST_INFO
 
             # Стилизовать ячейку преподов
             ws.cell(column=ws.max_column-1, row=act_row).style = ST_INFO
@@ -517,10 +517,10 @@ def create_resp(df:   'База парсинга',
 
     """ Модификация базы данных """
     # Замена всех порченных типов пары на аналоги
-    df = cra.replace_type(df, cra.find_bad_type(df))
+    df = cr_add.replace_type(df, cr_add.find_bad_type(df))
 
     # Выборка базы данных для групп
-    df = cra.take_data(df, grp2, grp3).dropna(subset=['date_pair'])
+    df = cr_add.take_data(df, grp2, grp3).dropna(subset=['date_pair'])
 
     # Выделение учебных недель
     times = time_resp(df)
@@ -528,19 +528,19 @@ def create_resp(df:   'База парсинга',
     """ Форматирование базы данных """
     # Предметы
     if i_yn:
-        df['item_name'] = df['item_name'].apply(lambda item_name: cra.format_item_name(item_name))
+        df['item_name'] = df['item_name'].apply(lambda item_name: cr_add.format_item_name(item_name))
 
     # Преподы
     if t_yn:
-        df['teacher'] = df['teacher'].apply(lambda teacher: cra.format_teacher(teacher))
+        df['teacher'] = df['teacher'].apply(lambda teacher: cr_add.format_teacher(teacher))
 
     # Подгруппы
     if not p_yn:
-        df['pdgr'] = df['pdgr'].apply(lambda pdgr: cra.format_pdgr(pdgr))
+        df['pdgr'] = df['pdgr'].apply(lambda pdgr: cr_add.format_pdgr(pdgr))
 
     # Кабинеты
     if c_yn:
-        df['cab'] = df['cab'].apply(lambda cab: cra.format_cab(cab))
+        df['cab'] = df['cab'].apply(lambda cab: cr_add.format_cab(cab))
 
     """ Работа с EXCEL """
     # Создание новой таблицы

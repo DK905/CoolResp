@@ -12,19 +12,20 @@ import datetime
 
 # # # Импорт модулей для работы сервера
 from flask import Flask, request, abort, jsonify, Response, send_file, make_response
-from CoolRespProject.modules_api import api_defaults as api_def
-from CoolRespProject.modules_api import api_database as api_db
+
+import cr_component.api.defaults as api_def
+import cr_component.api.database as api_db
 # Программный планировщик заданий (если нужны действия "по таймеру")
 # from apscheduler.triggers.interval import IntervalTrigger
 # Функция для безопасной работы с именами файлов (если имена файлов будут использоваться в коде)
-# from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename
 
 # # # Импорт модулей для работы парсера
-import CoolRespProject.modules_parser.cr_additional as cra
-import CoolRespProject.modules_parser.cr_defaults as crd
-import CoolRespProject.modules_parser.cr_reader as crr
-import CoolRespProject.modules_parser.cr_parser as crp
-import CoolRespProject.modules_parser.cr_writter as crw
+import cr_component.parser.additional as cr_add
+import cr_component.parser.defaults as cr_def
+import cr_component.parser.reader as cr_read
+import cr_component.parser.parser as cr_parse
+import cr_component.parser.writter as cr_write
 
 
 # Создание Flask-приложения
@@ -64,7 +65,7 @@ def read_book():
 
     # Сохранение данных из запроса в переменную
     file_request = request.files['file']
-    # filename = secure_filename(file_request.filename)
+    file_name = secure_filename(file_request.filename)
     file = file_request.stream.read()
 
     # Проверка хеша на наличие в базе данных
@@ -76,7 +77,7 @@ def read_book():
     # Если хеш не присутствует в базе данных, то файл новый и его нужно проверить
     if not file_info:
         # Определение расширения файла по первым байтам, как XLS/XLSX/UNKNOWN
-        file_ext = cra.check_object_extension(file)
+        file_ext = cr_add.check_object_extension(file)
         if file_ext == api_def.EXTENSIONS['404']:
             abort(Response('Файл должен иметь расширение «.xls» или «.xlsx»', 415))
 
@@ -86,15 +87,16 @@ def read_book():
             saved_file.write(file)
 
         # Занесение данных о файле в базу данных
-        api_db.add_info_to_files(file_hash, file_ext)
+        api_db.add_info_to_files(file_hash, file_name, file_ext)
     else:
         path_save = os.path.join(app.config['UPLOAD_FOLDER'], file_info['hash'])
         file_ext = file_info['extension']
 
     # Подгрузка скачанной книги
-    book = crr.read_book(path_save, file_ext)
+    book = cr_read.read_book(path_save, file_ext)
     # Получение словаря листов и групп на них
-    sheets = {sheet: crr.group_choice(crr.take_sheet(book, sheet))['groups_info'] for sheet in crr.see_sheets(book)}
+    sheets = {sheet: cr_read.group_choice(cr_read.take_sheet(book, sheet))['groups_info']
+              for sheet in cr_read.see_sheets(book)}
     # Обновление времени последнего взаимодействия с файлом
     api_db.update_time_in_files(file_hash)
 
@@ -125,17 +127,17 @@ def parse_book(file_hash, sheet_name, group_name, result_type):
         # Подгрузка файла книги
         try:
             file_ext = file_info['extension']
-            book = crr.read_book(os.path.join(app.config['UPLOAD_FOLDER'], file_hash),
-                                 file_ext)
+            book = cr_read.read_book(os.path.join(app.config['UPLOAD_FOLDER'], file_hash),
+                                     file_ext)
 
             # Получение данных о группах на выбранном листе
-            sheet = crr.take_sheet(book, sheet_name)
-            period, year, groups, start_end = crr.group_choice(sheet).values()
+            sheet = cr_read.take_sheet(book, sheet_name)
+            period, year, groups, start_end = cr_read.group_choice(sheet).values()
 
             # Парсинг
-            bd_process = crr.prepare(sheet, group_name, start_end)
-            df = crp.parser(bd_process, period, year)
-            df_json = cra.dataframe_to_json(df)
+            bd_process = cr_read.prepare(sheet, group_name, start_end)
+            df = cr_parse.parser(bd_process, period, year)
+            df_json = cr_add.dataframe_to_json(df)
 
             # Вычислить хеш виртуального JSON-файла
             json_hash = sha256()
@@ -143,7 +145,7 @@ def parse_book(file_hash, sheet_name, group_name, result_type):
             json_hash = json_hash.hexdigest()
 
             # Сохранить виртуальный файл
-            cra.dataframe_to_json(df, app.config['JSON_FOLDER'], json_hash)
+            cr_add.dataframe_to_json(df, app.config['JSON_FOLDER'], json_hash)
             api_db.add_info_to_json(json_hash, file_hash, sheet_name, group_name)
         except Exception as err:
             print(err)
@@ -151,8 +153,8 @@ def parse_book(file_hash, sheet_name, group_name, result_type):
     # Если результаты были сгенерированы ранее, то использовать их
     else:
         json_hash = json_info['hash']
-        df = cra.json_to_dataframe(os.path.join(app.config['JSON_FOLDER'], json_hash), group_name)
-        df_json = cra.dataframe_to_json(df)
+        df = cr_add.json_to_dataframe(os.path.join(app.config['JSON_FOLDER'], json_hash), group_name)
+        df_json = cr_add.dataframe_to_json(df)
 
     # Тип результата может быть json или excel
     if result_type == 'json':
@@ -165,16 +167,16 @@ def parse_book(file_hash, sheet_name, group_name, result_type):
         f2 = request.args.get('f2', default=True, type=bool)   # Сокращение должностей преподавателей
         f3 = request.args.get('f3', default=True, type=bool)   # Сокращение записи подгрупп
         f4 = request.args.get('f4', default=False, type=bool)  # Сокращение учебных корпусов кабинетов
-        result = crw.create_resp(df, g2, g3, f1, f2, f3, f4)
+        result = cr_write.create_resp(df, g2, g3, f1, f2, f3, f4)
 
         # Преобразование названия в транслитерацию, из-за используемой FLASK кодировки latin-51
         symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
                    u"abvgdeejzijklmnoprstufhzcss_y_euaABVGDEEJZIJKLMNOPRSTUFHZCSS_Y_EUA")
         tr = {ord(a): ord(b) for a, b in zip(*symbols)}
-        file_name = f'{cra.create_name(df)}.xlsx'.translate(tr)
+        file_name = f'{cr_add.create_name(df)}.xlsx'.translate(tr)
 
         # Сохранение excel-книги и возврат её
-        crw.save_resp(result, os.path.join(app.config['OTHER_FOLDER'], file_name))
+        cr_write.save_resp(result, os.path.join(app.config['OTHER_FOLDER'], file_name))
         return make_response(send_file(os.path.join(app.config['OTHER_FOLDER'], file_name)))
     else:
         return Response('None', 404)
@@ -185,7 +187,7 @@ def merge_books():
     """ Функция сведения разных файлов расписания в один датафрейм """
 
     # Базовые параметры сведения
-    merged_df = pd.DataFrame(columns=['group', *crd.DEF_COLUMNS])
+    merged_df = pd.DataFrame(columns=['group', *cr_def.DEF_COLUMNS])
     # year = request.args.get('year', default=datetime.date.today().year, type=int)
     year = request.args.get('year', default=0, type=int)
 
@@ -199,7 +201,7 @@ def merge_books():
         json_hashes = api_db.get_info_from_json_on_file(file_hash=file_hash)
         for json_hash in json_hashes:
             file, group = json_hash['hash'], json_hash['group']
-            df = cra.json_to_dataframe(os.path.join(app.config['JSON_FOLDER'], file))
+            df = cr_add.json_to_dataframe(os.path.join(app.config['JSON_FOLDER'], file))
             df_year = int(df['date_pair'].dt.year.mean())
             if 2000 < year != df_year:
                 continue
@@ -207,7 +209,7 @@ def merge_books():
             df.insert(0, 'group', group)
             merged_df = merged_df.append(df, ignore_index=True)
 
-    return cra.dataframe_to_json(merged_df)
+    return cr_add.dataframe_to_json(merged_df)
 
 
 @app.route('/get-books', methods=['GET', 'POST'])
