@@ -1,7 +1,7 @@
 """ Описание модуля
 Стартовый модуль с прикручиванием UX к макету GUI, и запуском приложения
 
-Компиляция: "pyinstaller --onefile Compile.spec"
+Компиляция: "pyinstaller Compile.spec"
 Генерация зависмостей: pip freeze > requirements.txt
 Восстановление зависимостей: pip install -r requirements.txt
 """
@@ -10,15 +10,16 @@
 import cr_component.parser.additional as cr_add
 import cr_component.parser.reader as cr_read
 import cr_component.parser.parser as cr_parse
-import cr_component.parser.writter as cr_write
+import cr_component.parser.writer as cr_write
 
 # # # Подключение модулей для работы GUI
-from cr_component.GUI.PC.main_gui import Ui_MainWindow
+from cr_component.gui.main_desktop_gui import Ui_MainWindow
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow
 from PyQt5.QtCore import QCoreApplication, QSettings
 from webbrowser import open as open_link
 from pyperclip import copy as cp
 from sys import exit as close_app
+import src.resources
 
 # # # Информация о приложении
 ORGANIZATION_NAME = 'DK905'
@@ -148,6 +149,7 @@ class CoolRespWindow(QMainWindow):
                                            '.',  # Имя файла по умолчанию
                                            'EXCEL таблицы(*.xls*);;Все файлы(*)')  # Поддерживаемые типы файлов
         self.ui.textBox_1.setText(path[0])
+        self.confirm_path()
 
     # Диалоговое окно сохранения
     def save_file(self, book):

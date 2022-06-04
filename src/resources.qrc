@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>About.ico</file>
+    <file>CheckMark.ico</file>
+    <file>CResp.ico</file>
+    <file>GIT.ico</file>
+    <file>Help.ico</file>
+    <file>Short_Help.png</file>
+</qresource>
+</RCC>

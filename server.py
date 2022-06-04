@@ -25,7 +25,7 @@ import cr_component.parser.additional as cr_add
 import cr_component.parser.defaults as cr_def
 import cr_component.parser.reader as cr_read
 import cr_component.parser.parser as cr_parse
-import cr_component.parser.writter as cr_write
+import cr_component.parser.writer as cr_write
 
 
 # Создание Flask-приложения
@@ -92,13 +92,14 @@ def read_book():
         path_save = os.path.join(app.config['UPLOAD_FOLDER'], file_info['hash'])
         file_ext = file_info['extension']
 
+    # Обновление времени последнего взаимодействия с файлом
+    api_db.update_time_in_files(file_hash)
+
     # Подгрузка скачанной книги
     book = cr_read.read_book(path_save, file_ext)
     # Получение словаря листов и групп на них
     sheets = {sheet: cr_read.group_choice(cr_read.take_sheet(book, sheet))['groups_info']
               for sheet in cr_read.see_sheets(book)}
-    # Обновление времени последнего взаимодействия с файлом
-    api_db.update_time_in_files(file_hash)
 
     # Возврат массива данных: хеша файла и словаря "лист: группы"
     return jsonify({

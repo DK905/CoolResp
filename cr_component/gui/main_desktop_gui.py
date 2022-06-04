@@ -5,28 +5,18 @@
 """
 
 
-# Функция возврата абсолютного пути (нужна для подгрузки ресурсов в компилируемую версию)
-def resource_path(relative):
-    import sys
-    from os import path as os_path
-    if hasattr(sys, '_MEIPASS'):
-        return os_path.join(sys._MEIPASS, relative)
-    else:
-        return os_path.join(os_path.abspath('.'), relative)
-
-
-""" Модули макета """
+import os
 from PyQt5.QtWidgets import QAction, QCheckBox, QComboBox, QDialog, QFrame, QGroupBox, QHBoxLayout, QLabel
 from PyQt5.QtWidgets import QLineEdit, QListWidget, QMenu, QMenuBar, QMessageBox, QPushButton, QWidget
-from PyQt5.QtCore    import Qt, QCoreApplication, QMetaObject, QRect
-from PyQt5.QtGui     import QIcon, QPixmap
+from PyQt5.QtCore import Qt, QCoreApplication, QMetaObject, QRect
+from PyQt5.QtGui import QIcon, QPixmap
 
 
 class AboutBox(QDialog):
     """ Класс окна справки """
     def __init__(self):
         QDialog.__init__(self)
-        self.setWindowIcon(QIcon(resource_path('CResp.ico')))
+        self.setWindowIcon(QIcon(':/CResp.ico'))
         self.setFixedSize(1000, 558)
         self.label_1 = QLabel(self)
         self.label_1.setGeometry(QRect(5, 3, 450, 550))
@@ -44,10 +34,10 @@ class AboutBox(QDialog):
         self.label_2.setGeometry(QRect(477, 70, 500, 478))
         self.label_2.setStyleSheet("font: 10pt \'Bookman Antiqua\'")
         self.label_2.setTabKeyNavigation(True)
-        self.label_2.addItems(['1)  Раздел технической инфы;',
+        self.label_2.addItems(['1)  Раздел технической информации;',
                                '2)  Текстовое поле для ввода пути к файлу расписания;',
                                '3)  Кнопка выбора файла расписания через диалоговое окно;',
-                               '4)  Кнопка подтверждения выбора файла;',
+                               '4)  Кнопка подтверждения выбора файла при ручном вводе;',
                                '5)  Список листов в выбранном файле;',
                                '6)  Список групп на выбранном листе;',
                                '7)  Выбор подгруппы для пар с делением на две подгруппы;',
@@ -57,7 +47,7 @@ class AboutBox(QDialog):
                                '11) Чекбокс для сокращения учебных корпусов у кабинетов;',
                                '12) Чекбокс для сокращения подгрупп до номера;',
                                '13) Кнопка для конвертации расписания;',
-                               '14) Виджет, куда выводятся логи;',
+                               '14) Виджет для вывода логов программы;',
                                '15) Переключатель отображения логов\n(при нажатии, виджет логов сворачивается).'])
 
 
@@ -186,7 +176,7 @@ class Ui_MainWindow(object):
         self.groupBox_8.setObjectName("groupBox_8")
         self.horizontalLayout = QHBoxLayout(self.groupBox_8)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        # Переключатель "сокращать должности преподов?"
+        # Переключатель "сокращать должности преподавателей?"
         self.checkBox_1 = QCheckBox(self.groupBox_8)
         self.checkBox_1.setObjectName("checkBox_1")
         self.horizontalLayout.addWidget(self.checkBox_1)
@@ -224,14 +214,13 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QMetaObject.connectSlotsByName(MainWindow)
 
-
     def retranslateUi(self, MainWindow):
         """ Настройка графической составляющей интерфейса главного окна """
 
         _translate = QCoreApplication.translate
         """ Параметры основного окна """
         MainWindow.setWindowTitle(_translate("MainWindow", 'CoolResp'))
-        MainWindow.setWindowIcon(QIcon(resource_path('CResp.ico')))
+        MainWindow.setWindowIcon(QIcon(':/CResp.ico'))
 
         """ Сообщение об ошибке """
         self.msgErr.setWindowTitle(_translate("MainWindow", 'Ошибка'))
@@ -243,18 +232,18 @@ class Ui_MainWindow(object):
         # Пункт №1
         self.action_1.setText(_translate("MainWindow", "GitHub"))
         self.action_1.setToolTip('Открыть репозиторий проекта')
-        self.action_1.setIcon(QIcon(resource_path('Git.ico')))
+        self.action_1.setIcon(QIcon(':/GIT.ico'))
         # Пункт №2
         self.action_2.setText(_translate("MainWindow", "Краткая справка"))
-        self.action_2.setToolTip('Небольшая справка\nпо проге')
-        self.action_2.setIcon(QIcon(resource_path('Help.ico')))
+        self.action_2.setToolTip('Краткая справка\nпо программе')
+        self.action_2.setIcon(QIcon(':/Help.ico'))
         self.action_2.setShortcut('F1')
         self.msgInf.setWindowTitle(_translate("MainWindow", 'Краткая справка'))
-        self.msgInf.label_1.setPixmap(QPixmap(resource_path('Short_Help.png')))
+        self.msgInf.label_1.setPixmap(QPixmap(':/Short_Help.png'))
         # Пункт №3
         self.action_3.setText(_translate("MainWindow", "О программе"))
         self.action_3.setToolTip('Инфа о разработке')
-        self.action_3.setIcon(QIcon(resource_path('About.ico')))
+        self.action_3.setIcon(QIcon(':/About.ico'))
         self.msgAbt.setWindowTitle(_translate("MainWindow", 'О программе'))
         self.msgAbt.setIcon(QMessageBox.Icon.Information)
         self.msgAbt.setText('''
@@ -275,7 +264,7 @@ universus114@mail.ru
         self.pushButton_1.setShortcut('Ctrl+O')
         # Кнопка подтверждения выбора
         self.pushButton_2.setToolTip('Подтвердить выбор пути\n(Загружает файл)')
-        self.pushButton_2.setIcon(QIcon(resource_path('CheckMark.ico')))
+        self.pushButton_2.setIcon(QIcon(':/CheckMark.ico'))
 
         """ Блок инфы, подгружаемой с листа """
         self.groupBox_2.setTitle(_translate("MainWindow", 'Базовая инфа'))
@@ -291,22 +280,22 @@ universus114@mail.ru
         # Деление на две подгруппы
         self.groupBox_6.setTitle(_translate("MainWindow", 'Из 2-х'))
         self.groupBox_6.setToolTip('Выбрать подгруппу "где две подгруппы"')
-        self.comboBox_3.setItemText(0, _translate("MainWindow", 'Пофиг'))
+        self.comboBox_3.setItemText(0, _translate("MainWindow", 'Все'))
         self.comboBox_3.setItemText(1, _translate("MainWindow", '1'))
         self.comboBox_3.setItemText(2, _translate("MainWindow", '2'))
         # Деление на три подгруппы
         self.groupBox_7.setTitle(_translate("MainWindow", 'Из 3-х'))
         self.groupBox_7.setToolTip('Выбрать подгруппу "где три подгруппы"')
-        self.comboBox_4.setItemText(0, _translate("MainWindow", 'Пофиг'))
+        self.comboBox_4.setItemText(0, _translate("MainWindow", 'Все'))
         self.comboBox_4.setItemText(1, _translate("MainWindow", '1'))
         self.comboBox_4.setItemText(2, _translate("MainWindow", '2'))
         self.comboBox_4.setItemText(3, _translate("MainWindow", '3'))
 
         """ Блок сокращений """
         self.groupBox_8.setTitle(_translate("MainWindow", 'Сокращения'))
-        # Переключатель "сокращать должности преподов?"
+        # Переключатель "сокращать должности преподавателей?"
         self.checkBox_1.setText(_translate("MainWindow", 'Преподаватели'))
-        self.checkBox_1.setToolTip('Сокращать должность преподов?')
+        self.checkBox_1.setToolTip('Сокращать должность преподавателей?')
         # Переключатель "сокращать названия предметов?"
         self.checkBox_2.setText(_translate("MainWindow", 'Предметы'))
         self.checkBox_2.setToolTip('Сокращать названия предметов?')
