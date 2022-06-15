@@ -20,6 +20,7 @@ from webbrowser import open as open_link
 from pyperclip import copy as cp
 from sys import exit as close_app
 import src.resources
+import os
 
 # # # Информация о приложении
 ORGANIZATION_NAME = 'DK905'
@@ -31,7 +32,8 @@ SETTINGS_TRAY = 'settings/tray'
 # # # Задание интерфейса
 class CoolRespWindow(QMainWindow):
     """ Атрибуты для обработки расписания """
-    path = ''  # Путь к обрабатываемой книге
+    path_load = ''  # Путь загрузки книги
+    path_save = ''  # Путь сохранения результатов
     book = ''  # Открытая книга
     sheet = ''  # Выбор листа
     groups_info = ''  # Строка с инфой о группах, периоде и т.п
@@ -81,7 +83,8 @@ class CoolRespWindow(QMainWindow):
     def save_settings(self):
         try:
             self.ui.settings.beginGroup('All')
-            self.ui.settings.setValue('PathFile', self.ui.textBox_1.text())
+            self.ui.settings.setValue('PathLoad', self.ui.textBox_1.text())
+            self.ui.settings.setValue('PathSave', self.path_save)
             self.ui.settings.setValue('Switching', self.ui.toogleButton_1.text())
             self.ui.settings.endGroup()
 
@@ -105,8 +108,11 @@ class CoolRespWindow(QMainWindow):
         try:
             # Группа общих настроек
             self.ui.settings.beginGroup('All')
-            if self.ui.settings.value('PathFile'):
-                self.ui.textBox_1.setText(self.ui.settings.value('PathFile'))
+            if self.ui.settings.value('PathLoad'):
+                self.path_load = self.ui.settings.value('PathLoad')
+                self.ui.textBox_1.setText(self.path_load)
+            if self.ui.settings.value('PathSave'):
+                self.path_save = self.ui.settings.value('PathSave')
             if self.ui.settings.value('Switching') and self.ui.settings.value(
                     'Switching') != self.ui.toogleButton_1.text():
                 self.turn_logs()
@@ -144,25 +150,29 @@ class CoolRespWindow(QMainWindow):
 
     # Диалоговое окно загрузки файла
     def open_file(self):
-        path = QFileDialog.getOpenFileName(self,
-                                           'Выбрать файл',  # Название диалогового окна
-                                           '.',  # Имя файла по умолчанию
-                                           'EXCEL таблицы(*.xls*);;Все файлы(*)')  # Поддерживаемые типы файлов
-        self.ui.textBox_1.setText(path[0])
-        self.confirm_path()
+        path_load = QFileDialog.getOpenFileName(self,
+                                                'Выбрать файл',  # Название диалогового окна
+                                                os.path.join(self.path_load, '.'),  # Путь и имя файла
+                                                'EXCEL таблицы(*.xls*);;Все файлы(*)')  # Поддерживаемые типы файлов
+        if path_load[0]:
+            self.ui.textBox_1.setText(path_load[0])
+            self.confirm_path()
+            self.path_load = path_load[0]
 
     # Диалоговое окно сохранения
     def save_file(self, book):
         name = f'{cr_add.create_name(book)}.xlsx'
-        path = QFileDialog.getSaveFileName(self,
-                                           'Сохранить файл',  # Название диалогового окна
-                                           name,  # Имя файла по умолчанию
-                                           'EXCEL таблицы(*.xlsx)')  # Формат для сохранения
+        path_save = QFileDialog.getSaveFileName(self,
+                                                'Сохранить файл',  # Название диалогового окна
+                                                os.path.join(self.path_save, name),  # Путь и имя файла
+                                                'EXCEL таблицы(*.xlsx)')  # Формат для сохранения
 
-        if not path[0].endswith('.xlsx'):  # Если нужно дописать формат
-            return f'{path[0]}.xlsx'
+        if not path_save[0].endswith('.xlsx'):  # Если нужно дописать формат
+            self.path_save = f'{path_save[0]}.xlsx'
         else:  # Если всё ок
-            return path[0]
+            self.path_save = path_save[0]
+
+        return self.path_save
 
     # Подгрузка основной инфы с листа
     def sheet_info(self):
@@ -186,7 +196,7 @@ class CoolRespWindow(QMainWindow):
     # Обнуление подгруженной информации
     def disintegration(self):
         # Очистка свойств класса
-        self.path = self.book = self.sheet = self.groups_info = ''
+        self.book = self.sheet = self.groups_info = ''
         # Очистка листов
         self.ui.comboBox_1.blockSignals(True)
         self.ui.comboBox_1.clear()
@@ -202,15 +212,15 @@ class CoolRespWindow(QMainWindow):
         self.disintegration()
 
         # Считывание пути с текстового поля пути
-        self.path = self.ui.textBox_1.text()
+        self.path_load = self.ui.textBox_1.text()
         if self.ui.listWidget.currentRow() > 0:  # Логи выводятся в виджет построчно, начиная с первой строки
             self.ui.listWidget.addItem(' ')
-        self.ui.listWidget.addItems([f'Подключаемый путь:', f'«{self.path}»'])
+        self.ui.listWidget.addItems([f'Подключаемый путь:', f'«{self.path_load}»'])
 
         try:
             # Попытка считать книгу
             stage = 'Считывание книги'
-            self.book = cr_read.read_book(self.path)
+            self.book = cr_read.read_book(self.path_load)
             self.ui.listWidget.addItem(f'Файл расписания успешно подключен!')
 
             # Попытка считать список листов в книге (бывают книги без листов)      
@@ -256,27 +266,27 @@ class CoolRespWindow(QMainWindow):
                                            self.groups_info['period'],  # Период расписания
                                            self.groups_info['year']  # Год расписания
                                            )
-
+                # print(bd_parse)
                 # Форматирование расписания
                 stage = 'Форматирование расписания'
                 book = cr_write.create_resp(bd_parse,  # БД расписания
                                             str(self.ui.comboBox_3.currentIndex()),  # Подгруппа, где две подгруппы
                                             str(self.ui.comboBox_4.currentIndex()),  # Подгруппа, где три подгруппы
-                                            bool(self.ui.checkBox_2.checkState()),  # Флаг сокращения предмета
-                                            bool(self.ui.checkBox_1.checkState()),  # Флаг сокращения препода
-                                            not bool(self.ui.checkBox_4.checkState()),  # Флаг сокращения подгруппы
+                                            bool(self.ui.checkBox_2.checkState()),   # Флаг сокращения предмета
+                                            bool(self.ui.checkBox_1.checkState()),   # Флаг сокращения препода
+                                            bool(self.ui.checkBox_4.checkState()),   # Флаг сокращения подгруппы
                                             bool(self.ui.checkBox_3.checkState()))   # Флаг сокращения корпуса кабинета
 
                 # Выбор пути к файлу
                 stage = 'Сохранение расписания'
-                path = self.save_file(bd_parse)
-                if path == '.xlsx':
+                path_save = self.save_file(bd_parse)
+                if path_save == '.xlsx':
                     self.error_action('Сохранение было отменено пользователем.')
                 else:
                     # Попытка сохранения расписания
                     stage = 'Сохранение готового расписания'
-                    cr_write.save_resp(book, path)
-                    self.ui.listWidget.addItems([f'Расписание сохранено как:', f'«{path}»', ''])
+                    cr_write.save_resp(book, path_save)
+                    self.ui.listWidget.addItems([f'Расписание сохранено как:', f'«{path_save}»', ''])
 
             except Exception as msg:
                 self.error_action(f'Ошибка на этапе «{stage}»\n{msg}')

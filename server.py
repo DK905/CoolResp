@@ -19,6 +19,7 @@ import cr_component.api.database as api_db
 # from apscheduler.triggers.interval import IntervalTrigger
 # Функция для безопасной работы с именами файлов (если имена файлов будут использоваться в коде)
 from werkzeug.utils import secure_filename
+import ssl
 
 # # # Импорт модулей для работы парсера
 import cr_component.parser.additional as cr_add
@@ -54,6 +55,15 @@ app.config['MAX_CONTENT_LENGTH'] = api_def.MAX_SIZE
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(base_dir, 'Temporary', 'database.db')
 # Индикатор отслеживания модификаций объектов базы данных
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Загрузка сертификата SSL при его наличии
+app.config['PATH_TO_CRT'] = os.path.join(base_dir, 'Security', 'cert.crt')
+app.config['PATH_TO_KEY'] = os.path.join(base_dir, 'Security', 'privkey.pem')
+if os.path.exists(app.config['PATH_TO_CRT']) and os.path.exists(app.config['PATH_TO_KEY']):
+    app.config['SSL_CONTEXT'] = ssl.SSLContext()
+    app.config['SSL_CONTEXT'].load_cert_chain(app.config['PATH_TO_CRT'], app.config['PATH_TO_KEY'])
+else:
+    app.config['SSL_CONTEXT'] = None
 
 
 @app.route('/read-book/', methods=['POST'])
@@ -290,8 +300,11 @@ if __name__ == '__main__':
     # # Очистка неактивных/необозначенных записей в БД
     # check_database()
 
+    import ssl as ssl1
+
     # Запустить приложение в режиме дебага, с доступом через порт 5000
-    app.run(debug=True, port=5000)
+    app.run('0.0.0.0', debug=True, port=5000, ssl_context=app.config['SSL_CONTEXT'])
+    # app.run(debug=True, port=5000, ssl_context=app.config['SSL_CONTEXT'])
 
     # Запустить приложение в обычном режиме, с доступом через порт заданный хостингом
     # app.run(int(os.getenv('PORT')))

@@ -44,7 +44,8 @@ ST_NULL = NamedStyle(name='Круговерть пустоты')
 ST_NULL.font = Font(name='Plantagenet Cherokee', size=14)
 ST_NULL.border = Border(left=Side(border_style=None), right=Side(border_style=None),
                         top=Side(border_style=None), bottom=Side(border_style=None))
-ST_NULL.fill = PatternFill(patternType='lightDown', start_color='00ff27')
+ST_NULL_COLOR = '0000ff27'
+ST_NULL.fill = PatternFill(patternType='lightDown', start_color=ST_NULL_COLOR)
 
 # Названия столбцов
 parse_title = ['Дни', '№ пары', 'Время', 'Ауд', 'Преподаватель']
@@ -113,8 +114,8 @@ def sheet_and_headers(wb:  'Объект книги EXCEL из openpyxl',
              (tt.loc[d_ind-1]['monday'].month != week['monday'].month or
               tt.loc[d_ind-1]['saturday'].month != week['saturday'].month) and
              # И понедельник/суббота приходятся на первые числа месяца
-             (int(week['monday'].day) in range(1, 7) or
-              int(week['saturday'].day) in range(1, 7)) and
+             (int(week['monday'].day) in range(1, 8) or
+              int(week['saturday'].day) in range(1, 8)) and
              # И месяца ещё не было в списке листов
              cr_def.MONTHS.loc[week['monday'].month, 'full_name'] not in wb.sheetnames)):
 
@@ -366,7 +367,7 @@ def is_merge(cell_1: 'Проверяемая ячейка №1',
 
         # Вариант 3) Первая ячейка - объединённая, вторая - обычная
         elif t1 and not t2:
-            # Всё збс если каким-то фиговым листом объединённая ячейка объединяет всего одну ячейку
+            # Всё хорошо, если объединённая ячейка объединяет лишь одну ячейку
             if cell_1[0] == cell_1[1] == cell_2.coordinate[0]:
                 return [cell_1[0], cell_1[1]]
             else:
@@ -411,10 +412,10 @@ def visual(wb:  'Частично форматированная книга'
             # Пустая строка объединяется сразу
             if not ws.cell(column=4, row=row).value and not ws.cell(column=ws.max_column-1, row=row).value:
                 ws.merge_cells(start_row=row, start_column=4, end_row=row, end_column=ws.max_column-2)
-                ws.cell(column=2, row=row).fill = PatternFill(patternType='lightDown', start_color='00ff27')
-                ws.cell(column=3, row=row).fill = PatternFill(patternType='lightDown', start_color='00ff27')
-                ws.cell(column=ws.max_column-1, row=row).fill = PatternFill(patternType='lightDown', start_color='00ff27')
-                ws.cell(column=ws.max_column,   row=row).fill = PatternFill(patternType='lightDown', start_color='00ff27')
+                ws.cell(column=2, row=row).fill = ST_NULL.fill
+                ws.cell(column=3, row=row).fill = ST_NULL.fill
+                ws.cell(column=ws.max_column-1, row=row).fill = ST_NULL.fill
+                ws.cell(column=ws.max_column,   row=row).fill = ST_NULL.fill
             else:
                 sc = ec = 4
                 for col in range(4, ws.max_column-1):
@@ -494,8 +495,13 @@ def visual(wb:  'Частично форматированная книга'
 
         # Корректировка высоты строк
         for row in ws.rows:
-            max_str = max(len(re.split(r'\n', str(cell.value))) for cell in row) + 1
-            ws.row_dimensions[row[0].row].height = max_str * 17
+            # Если строка пустая, высота минимальная
+            if ws.cell(column=2, row=row[0].row).fill.start_color.index == ST_NULL_COLOR:
+                ws.row_dimensions[row[0].row].height = 20
+            # Если строка не пустая, высота вычисляемая
+            else:
+                max_str = max(len(re.split(r'\n', str(cell.value))) for cell in row) + 1
+                ws.row_dimensions[row[0].row].height = max_str * 17
 
         # Закрепление столбцов слева и строк выше D2
         ws.freeze_panes = 'D2'
