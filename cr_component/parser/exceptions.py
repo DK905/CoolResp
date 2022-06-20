@@ -44,17 +44,30 @@ class CantFoundPositionInfo(BasicException):
     def __init__(self):
         super().__init__(
             f'Невозможно выявить содержательную часть расписания!\n'
-            f'На листе не обнаружены позиционные метки: <ссылка на позиционный образец>'
+            f'На листе не обнаружены позиционные метки. Образец:\n'
+            f'https://github.com/DK905/CoolResp/blob/master/Design/Типовой%20шаблон.png'
         )
 
 
 """ Исключения парсера """
 
 
-class FileNot(BasicException):
+class IncorrectDate(BasicException):
     """  """
 
-    def __init__(self):
+    def __init__(self, cell, date):
         super().__init__(
-            f''
+            f'Набор дат некорректен!\n'
+            f'«{cell}»\n'
+            f'Даты: «{date}»'
+        )
+
+
+class IncorrectCell(BasicException):
+    """  """
+
+    def __init__(self, cell):
+        super().__init__(
+            f'Что-то не так в ячейке!\n'
+            f'«{cell}»'
         )

@@ -4,6 +4,7 @@ r"""Парсинг датафрейма с ячейками расписания
 
 import cr_component.parser.additional as cr_add
 import cr_component.parser.defaults as cr_def
+import cr_component.parser.exceptions as cr_err
 from datetime import date as dt_date, timedelta
 import pandas as pd
 import numpy as np
@@ -53,22 +54,23 @@ def format_group(group: 'Подстрока форматируемой подг�
 
 def expand_dates(dates: 'Список подстрок с датами предмета',
                  year:  'Год (берётся из периода расписания)',
-                 day:   'День недели, соответствующий списку дат'
+                 day:   'День недели, соответствующий списку дат',
+                 cell:   'Обрабатываемая запись (для исключений)'
                  ) -> 'Список объектов дат':
 
     """ Функция абсолютного разбития дат """
     # Шаблон разделения дат по месяцам
     dates = '; '.join(dates).split(';')
     # Шаблон для дат вида "с...по..."
-    dat_pat = r'(?i)с\s*([\d\.]{4,8})[г\.]*\s*по\s*([\d\.]{4,8})[г\.]*'
+    dat_pat = r'(?i)с\s*([\d\.]{4,13})[г\.]*\s*по\s*([\d\.]{4,13})[г\.]*'
     # Список для дат записи
     all_dates = []
-    for date in dates:
-        if len(date) < 5:
+    for date_string in dates:
+        if len(date_string) < 5:
             continue
         # Если дата вида "с 13.01 по 06.06"
-        if re.search(dat_pat, date):
-            start_end = re.search(dat_pat, date).groups()
+        if re.search(dat_pat, date_string):
+            start_end = re.search(dat_pat, date_string).groups()
             dt_start = list(map(int, list(filter(None, start_end[0].split('.')))))
             dt_final = list(map(int, list(filter(None, start_end[1].split('.')))))
             dt_start = dt_date(year, dt_start[1], dt_start[0])
@@ -84,12 +86,14 @@ def expand_dates(dates: 'Список подстрок с датами пред�
                 all_dates.append(dt_start)
                 dt_start += timedelta(days=7)
         # Если дата вида "03,17,24,31,03" или "22,02,01.03.19г"
-        elif date:
-            date = list(map(int, re.findall(r'(\d+)', date)))
+        elif date_string:
+            date = list(map(int, re.findall(r'(\d+)', date_string)))
             # Костыль. Если последнее число - год, то выкинуть его
             if date and year in [date[-1], date[-1]+2000]:
                 del(date[-1])
             # Прогон в обратную сторону, чтобы отловить косяки типа "22,02,19,01.03.19г"
+            if len(date) < 1:
+                raise cr_err.IncorrectDate(cell, date_string)
             month, date = date[-1], date[:-1]
             for d in range(len(date)-1, -1, -1):
                 # Установка текущей даты
@@ -97,6 +101,8 @@ def expand_dates(dates: 'Список подстрок с датами пред�
                     dt_start = dt_date(year, month, date[d])
                 except:
                     month = date[d]
+                    if month not in list(range(1, 12+1)):
+                        raise cr_err.IncorrectDate(cell, date_string)
                     dt_start = dt_date(year, month, date[d])
 
                 # Проверка даты на правильность дня
@@ -290,6 +296,9 @@ def parser(stuff: 'База обработки',
                     if not dtg[i][0]:
                         # Если косяк в "не первой" записи, то склеить её с предыдущей
                         if i > 0:
+                            # Проверка наличия записи (во избежание ошибок разбития даты)
+                            if not dtg[i-1][1] or not dtg[i][1]:
+                                raise cr_err.IncorrectCell(rec)
                             # Склейка типов пары
                             dtg[i-1][1][0] += ', '+dtg[i][1][0]
                             del(dtg[i])
@@ -328,7 +337,7 @@ def parser(stuff: 'База обработки',
                         # Поставить датой период расписания
                         dtg[f][0] = [f'с {timey[0]} по {timey[1]}']
                     # Раскрыть даты в список дат
-                    dtg[f][0] = expand_dates(dtg[f][0], year, len(day_num)-1)
+                    dtg[f][0] = expand_dates(dtg[f][0], year, len(day_num)-1, rec)
 
                     # Если тип пары не был определён
                     if not dtg[f][1]:

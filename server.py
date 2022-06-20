@@ -300,8 +300,6 @@ if __name__ == '__main__':
     # # Очистка неактивных/необозначенных записей в БД
     # check_database()
 
-    import ssl as ssl1
-
     # Запустить приложение в режиме дебага, с доступом через порт 5000
     app.run('0.0.0.0', debug=True, port=5000, ssl_context=app.config['SSL_CONTEXT'])
     # app.run(debug=True, port=5000, ssl_context=app.config['SSL_CONTEXT'])
